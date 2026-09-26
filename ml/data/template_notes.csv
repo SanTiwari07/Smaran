@@ -1,0 +1,201 @@
+text,kind,machine,residency,criticality,source
+"salary slip issue, manager said to email hr",observation,,private,0,template
+"CNC-07 stopped, do not use",status,CNC-07,sync,2,template
+noted,observation,,drop,0,template
+"ROBOT-ARM-5: coolant level low, adjusted the relief valve",fix,ROBOT-ARM-5,sync,0,template
+"Anjali will send the gate pass, aadhaar 8002 3287 9974",observation,,private,0,template
+"LATHE-03: alarm 1040 on the drive, replaced the gripper spring",fix,LATHE-03,sync,0,template
+LATHE-03 coolant level low,observation,LATHE-03,sync,0,template
+ROBOT-ARM-5 burning smell near the drive,observation,ROBOT-ARM-5,sync,2,template
+"doctor appointment at 4 pm, will be back after",observation,,private,0,template
+"Anjali complained about the shift roster, reach at anjali@plant.example.com",observation,,private,0,template
+"my son is sick, leaving early today",observation,,private,0,template
+LATHE-03 chip conveyor slow,observation,LATHE-03,sync,0,template
+PRESS-02 axis 2 backlash 0.03 mm,observation,PRESS-02,sync,1,template
+PRESS-02 vibration at high RPM,observation,PRESS-02,sync,1,template
+"ROBOT-ARM-5: encoder drift on axis 3, reset the drive alarm",fix,ROBOT-ARM-5,sync,0,template
+lunch at canteen?,observation,,drop,0,template
+ok,observation,,drop,0,template
+"salary slip issue, manager said to email hr",observation,,private,0,template
+"PRESS-02 belt worn, visible cracks",observation,PRESS-02,sync,1,template
+"CNC-12: alarm 1040 on the drive, recalibrated axis 3",fix,CNC-12,sync,0,template
+"my son is sick, leaving early today",observation,,private,0,template
+"CNC-07 belt worn, visible cracks",observation,CNC-07,sync,1,template
+"my son is sick, leaving early today",observation,,private,0,template
+CNC-07 spindle noise during finishing pass,observation,CNC-07,sync,1,template
+LATHE-03 minor surface finish marks,observation,LATHE-03,sync,0,template
+"PRESS-02: axis 2 backlash 0.03 mm, cleaned the coolant filter",fix,PRESS-02,sync,0,template
+lunch at canteen?,observation,,drop,0,template
+lunch at canteen?,observation,,drop,0,template
+"CNC-07: alarm 1040 on the drive, replaced the shaft seal",fix,CNC-07,sync,0,template
+tea break,observation,,drop,0,template
+ROBOT-ARM-5 chip conveyor slow,observation,ROBOT-ARM-5,sync,0,template
+haha,observation,,drop,0,template
+"Imran asked me to cover the night shift, call Imran on 8499670335",observation,,private,0,template
+"CNC-07: filter clogged, reset the drive alarm",fix,CNC-07,sync,0,template
+"Priya asked me to cover the night shift, call Priya on 8977294617",observation,,private,0,template
+"Suresh's leave application for next week, number 8578700535",observation,,private,0,template
+CNC-07 down for maintenance,status,CNC-07,sync,1,template
+"CNC-07: chip conveyor slow, tightened the tool holder",fix,CNC-07,sync,0,template
+"Suresh asked me to cover the night shift, call Suresh on 6175938041",observation,,private,0,template
+lunch at canteen?,observation,,drop,0,template
+"Deepak complained about the shift roster, reach at suresh@plant.example.com",observation,,private,0,template
+CNC-12 coolant level low,observation,CNC-12,sync,0,template
+"PRESS-02: alarm 1040 on the drive, reset the drive alarm",fix,PRESS-02,sync,0,template
+ROBOT-ARM-5 lubrication due next week,observation,ROBOT-ARM-5,sync,0,template
+"Deepak complained about the shift roster, reach at imran@plant.example.com",observation,,private,0,template
+PRESS-02 hydraulic pressure at 140 bar,observation,PRESS-02,sync,1,template
+"PRESS-02 belt worn, visible cracks",observation,PRESS-02,sync,1,template
+CNC-07 running at reduced speed,status,CNC-07,sync,0,template
+"CNC-12: encoder drift on axis 3, adjusted the relief valve",fix,CNC-12,sync,0,template
+"CNC-12: burning smell near the drive, replaced the bearing set",fix,CNC-12,sync,1,template
+noted,observation,,drop,0,template
+"doctor appointment at 4 pm, will be back after",observation,,private,0,template
+hello,observation,,drop,0,template
+ROBOT-ARM-5 back in production,status,ROBOT-ARM-5,sync,0,template
+hello,observation,,drop,0,template
+"salary slip issue, manager said to email hr",observation,,private,0,template
+CNC-07 hydraulic pressure at 140 bar,observation,CNC-07,sync,1,template
+LATHE-03 minor surface finish marks,observation,LATHE-03,sync,0,template
+"PRESS-02: vibration at high RPM, reset the drive alarm",fix,PRESS-02,sync,0,template
+CNC-12 axis 2 backlash 0.03 mm,observation,CNC-12,sync,1,template
+"LATHE-03: belt worn, visible cracks, replaced the gripper spring",fix,LATHE-03,sync,0,template
+personal note: pay rent before friday,observation,,private,0,template
+"Anjali's leave application for next week, number 8568409933",observation,,private,0,template
+CNC-12 vibration at high RPM,observation,CNC-12,sync,1,template
+CNC-07 oil leak under the press,observation,CNC-07,sync,2,template
+weekend plans anyone,observation,,drop,0,template
+ROBOT-ARM-5 running normally,status,ROBOT-ARM-5,sync,0,template
+ROBOT-ARM-5 chip conveyor slow,observation,ROBOT-ARM-5,sync,0,template
+LATHE-03 minor surface finish marks,observation,LATHE-03,sync,0,template
+"ROBOT-ARM-5: spindle noise during finishing pass, reset the drive alarm",fix,ROBOT-ARM-5,sync,0,template
+"salary slip issue, manager said to email hr",observation,,private,0,template
+"ROBOT-ARM-5: spindle overheating at 80 C, cleaned the coolant filter",fix,ROBOT-ARM-5,sync,1,template
+PRESS-02 burning smell near the drive,observation,PRESS-02,sync,2,template
+tea break,observation,,drop,0,template
+haha,observation,,drop,0,template
+cricket match tonight?,observation,,drop,0,template
+"doctor appointment at 4 pm, will be back after",observation,,private,0,template
+CNC-12 down for maintenance,status,CNC-12,sync,1,template
+lunch at canteen?,observation,,drop,0,template
+"Imran complained about the shift roster, reach at deepak@plant.example.com",observation,,private,0,template
+"CNC-12: chip conveyor slow, recalibrated axis 3",fix,CNC-12,sync,0,template
+"Anjali's leave application for next week, number 6391006448",observation,,private,0,template
+"Deepak complained about the shift roster, reach at imran@plant.example.com",observation,,private,0,template
+ROBOT-ARM-5 axis 2 backlash 0.03 mm,observation,ROBOT-ARM-5,sync,1,template
+"PRESS-02 stopped, do not use",status,PRESS-02,sync,2,template
+CNC-07 alarm 1040 on the drive,observation,CNC-07,sync,1,template
+CNC-12 sparks near the electrical cabinet,observation,CNC-12,sync,2,template
+"LATHE-03: lubrication due next week, reset the drive alarm",fix,LATHE-03,sync,0,template
+personal note: pay rent before friday,observation,,private,0,template
+"LATHE-03: axis 2 backlash 0.03 mm, re-tensioned the belt",fix,LATHE-03,sync,0,template
+CNC-12 running normally,status,CNC-12,sync,0,template
+CNC-07 running at reduced speed,status,CNC-07,sync,0,template
+ok,observation,,drop,0,template
+ROBOT-ARM-5 filter clogged,observation,ROBOT-ARM-5,sync,0,template
+weekend plans anyone,observation,,drop,0,template
+ROBOT-ARM-5 tool changer jam,observation,ROBOT-ARM-5,sync,1,template
+"CNC-07: encoder drift on axis 3, reset the drive alarm",fix,CNC-07,sync,0,template
+"Meena will send the gate pass, aadhaar 1058 9055 8385",observation,,private,0,template
+PRESS-02 oil leak under the press,observation,PRESS-02,sync,2,template
+CNC-12 chip conveyor slow,observation,CNC-12,sync,0,template
+"PRESS-02: axis 2 backlash 0.03 mm, replaced the bearing set",fix,PRESS-02,sync,0,template
+"ROBOT-ARM-5: burning smell near the drive, adjusted the relief valve",fix,ROBOT-ARM-5,sync,1,template
+CNC-12 smoke from the motor housing,observation,CNC-12,sync,2,template
+personal note: pay rent before friday,observation,,private,0,template
+CNC-07 back in production,status,CNC-07,sync,0,template
+ROBOT-ARM-5 oil leak under the press,observation,ROBOT-ARM-5,sync,2,template
+haha,observation,,drop,0,template
+PRESS-02 running at reduced speed,status,PRESS-02,sync,0,template
+PRESS-02 coolant level low,observation,PRESS-02,sync,0,template
+LATHE-03 back in production,status,LATHE-03,sync,0,template
+"Kavya's leave application for next week, number 6504390778",observation,,private,0,template
+"CNC-12: chip conveyor slow, reset the drive alarm",fix,CNC-12,sync,0,template
+"Imran's leave application for next week, number 9152588544",observation,,private,0,template
+"Priya asked me to cover the night shift, call Priya on 9986469662",observation,,private,0,template
+personal note: pay rent before friday,observation,,private,0,template
+weekend plans anyone,observation,,drop,0,template
+thanks,observation,,drop,0,template
+tea break,observation,,drop,0,template
+"PRESS-02: filter clogged, updated the PLC firmware",fix,PRESS-02,sync,0,template
+CNC-12 lubrication due next week,observation,CNC-12,sync,0,template
+PRESS-02 hydraulic pressure at 140 bar,observation,PRESS-02,sync,1,template
+"Deepak will send the gate pass, aadhaar 2231 4405 9201",observation,,private,0,template
+PRESS-02 filter clogged,observation,PRESS-02,sync,0,template
+"Deepak asked me to cover the night shift, call Deepak on 7872635177",observation,,private,0,template
+"Imran complained about the shift roster, reach at imran@plant.example.com",observation,,private,0,template
+LATHE-03 guard missing on the pulley,observation,LATHE-03,sync,2,template
+"ROBOT-ARM-5: smoke from the motor housing, replaced the shaft seal",fix,ROBOT-ARM-5,sync,1,template
+ROBOT-ARM-5 vibration at high RPM,observation,ROBOT-ARM-5,sync,1,template
+CNC-12 sparks near the electrical cabinet,observation,CNC-12,sync,2,template
+"ROBOT-ARM-5: chip conveyor slow, adjusted the relief valve",fix,ROBOT-ARM-5,sync,0,template
+done,observation,,drop,0,template
+PRESS-02 running at reduced speed,status,PRESS-02,sync,0,template
+lunch at canteen?,observation,,drop,0,template
+CNC-07 spindle noise during finishing pass,observation,CNC-07,sync,1,template
+"doctor appointment at 4 pm, will be back after",observation,,private,0,template
+"Ravi complained about the shift roster, reach at kavya@plant.example.com",observation,,private,0,template
+"PRESS-02: spindle overheating at 80 C, replaced the gripper spring",fix,PRESS-02,sync,1,template
+"Ravi will send the gate pass, aadhaar 4566 9021 5765",observation,,private,0,template
+"doctor appointment at 4 pm, will be back after",observation,,private,0,template
+"PRESS-02 stopped, do not use",status,PRESS-02,sync,2,template
+"CNC-07 stopped, do not use",status,CNC-07,sync,2,template
+"PRESS-02: axis 2 backlash 0.03 mm, cleaned the coolant filter",fix,PRESS-02,sync,0,template
+"CNC-07: axis 2 backlash 0.03 mm, replaced the gripper spring",fix,CNC-07,sync,0,template
+PRESS-02 spindle overheating at 80 C,observation,PRESS-02,sync,2,template
+PRESS-02 down for maintenance,status,PRESS-02,sync,1,template
+cricket match tonight?,observation,,drop,0,template
+PRESS-02 down for maintenance,status,PRESS-02,sync,1,template
+"salary slip issue, manager said to email hr",observation,,private,0,template
+LATHE-03 minor surface finish marks,observation,LATHE-03,sync,0,template
+PRESS-02 smoke from the motor housing,observation,PRESS-02,sync,2,template
+"salary slip issue, manager said to email hr",observation,,private,0,template
+"LATHE-03: spindle overheating at 80 C, tightened the tool holder",fix,LATHE-03,sync,1,template
+"CNC-12: spindle overheating at 80 C, cleaned the coolant filter",fix,CNC-12,sync,1,template
+"CNC-12: smoke from the motor housing, recalibrated axis 3",fix,CNC-12,sync,1,template
+"CNC-12: alarm 1040 on the drive, adjusted the relief valve",fix,CNC-12,sync,0,template
+"ROBOT-ARM-5: smoke from the motor housing, re-tensioned the belt",fix,ROBOT-ARM-5,sync,1,template
+"LATHE-03: tool changer jam, replaced the shaft seal",fix,LATHE-03,sync,0,template
+thanks,observation,,drop,0,template
+"ROBOT-ARM-5: chip conveyor slow, updated the PLC firmware",fix,ROBOT-ARM-5,sync,0,template
+ROBOT-ARM-5 encoder drift on axis 3,observation,ROBOT-ARM-5,sync,1,template
+thanks,observation,,drop,0,template
+"LATHE-03: burning smell near the drive, re-tensioned the belt",fix,LATHE-03,sync,1,template
+"CNC-12: hydraulic pressure at 140 bar, re-tensioned the belt",fix,CNC-12,sync,0,template
+"my son is sick, leaving early today",observation,,private,0,template
+CNC-12 running normally,status,CNC-12,sync,0,template
+CNC-07 minor surface finish marks,observation,CNC-07,sync,0,template
+"LATHE-03: axis 2 backlash 0.03 mm, recalibrated axis 3",fix,LATHE-03,sync,0,template
+LATHE-03 hydraulic pressure at 140 bar,observation,LATHE-03,sync,1,template
+CNC-07 encoder drift on axis 3,observation,CNC-07,sync,1,template
+done,observation,,drop,0,template
+ROBOT-ARM-5 chip conveyor slow,observation,ROBOT-ARM-5,sync,0,template
+ROBOT-ARM-5 hydraulic pressure at 140 bar,observation,ROBOT-ARM-5,sync,1,template
+"Priya will send the gate pass, aadhaar 9944 7440 9301",observation,,private,0,template
+cricket match tonight?,observation,,drop,0,template
+ROBOT-ARM-5 axis 2 backlash 0.03 mm,observation,ROBOT-ARM-5,sync,1,template
+ROBOT-ARM-5 guard missing on the pulley,observation,ROBOT-ARM-5,sync,2,template
+ok,observation,,drop,0,template
+"CNC-07: belt worn, visible cracks, re-tensioned the belt",fix,CNC-07,sync,0,template
+LATHE-03 sparks near the electrical cabinet,observation,LATHE-03,sync,2,template
+CNC-07 guard missing on the pulley,observation,CNC-07,sync,2,template
+CNC-12 guard missing on the pulley,observation,CNC-12,sync,2,template
+see you tomorrow,observation,,drop,0,template
+okay will check,observation,,drop,0,template
+"doctor appointment at 4 pm, will be back after",observation,,private,0,template
+ROBOT-ARM-5 coolant level low,observation,ROBOT-ARM-5,sync,0,template
+"CNC-07: spindle noise during finishing pass, replaced the gripper spring",fix,CNC-07,sync,0,template
+"CNC-07: burning smell near the drive, adjusted the relief valve",fix,CNC-07,sync,1,template
+CNC-12 coolant level low,observation,CNC-12,sync,0,template
+hello,observation,,drop,0,template
+okay will check,observation,,drop,0,template
+PRESS-02 coolant level low,observation,PRESS-02,sync,0,template
+ROBOT-ARM-5 waiting for spare parts,status,ROBOT-ARM-5,sync,0,template
+"ROBOT-ARM-5: vibration at high RPM, replaced the bearing set",fix,ROBOT-ARM-5,sync,0,template
+"salary slip issue, manager said to email hr",observation,,private,0,template
+"CNC-12: filter clogged, replaced the shaft seal",fix,CNC-12,sync,0,template
+personal note: pay rent before friday,observation,,private,0,template
+"doctor appointment at 4 pm, will be back after",observation,,private,0,template
+"PRESS-02: hydraulic pressure at 140 bar, recalibrated axis 3",fix,PRESS-02,sync,0,template
+ok,observation,,drop,0,template
+CNC-12 down for maintenance,status,CNC-12,sync,1,template

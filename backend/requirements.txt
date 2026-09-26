@@ -1,0 +1,11 @@
+qdrant-edge-py==0.8.0
+qdrant-client
+fastembed
+fastapi
+uvicorn
+pydantic
+httpx
+scikit-learn
+pytest
+hypothesis
+python-dotenv

@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+.env
+
+# Node
+node_modules/
+frontend/dist/
+
+# Large or generated
+models/*
+ml/artifacts/*
+runtime/*
+logs/*
+!**/.gitkeep
+frontend/.env.local
+bench/results.json
+.hypothesis/
+.pytest_cache/
+frontend/tsconfig.tsbuildinfo

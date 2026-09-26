@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+/* System fonts only: the dashboard must look the same with Wi-Fi off. */
+@theme {
+  --font-sans: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --font-serif: Georgia, "Times New Roman", serif;
+  --font-mono: "Cascadia Mono", Consolas, ui-monospace, monospace;
+  --color-ink: #1e1b4b;
+  --color-laurel: #c9a227;
+  --color-laurel-soft: #e8c872;
+}
+
+:root {
+  color-scheme: light dark;
+}
+
+body {
+  @apply bg-stone-50 text-stone-900 antialiased dark:bg-stone-950 dark:text-stone-100;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}

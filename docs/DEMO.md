@@ -1,0 +1,62 @@
+# Demo script
+
+Four live beats, each starting from its own reset so one failure can't cascade into the next. Everything runs on one laptop. "Offline" is a software switch on the dashboard, so no venue Wi-Fi is needed.
+
+## Before you present
+
+```bash
+.venv/Scripts/python scripts/demo.py start-all          # add --qdrant embedded if Docker isn't running
+.venv/Scripts/python scripts/demo.py rehearse --runs 3  # every check should PASS
+.venv/Scripts/python scripts/demo.py reset b1
+```
+
+Open http://localhost:5173 in a full-screen browser window. Keep a terminal ready for the resets.
+
+**Opening line:** *"Other teams show that a device can remember. We show that its memory stays correct and private when devices go offline and disagree."*
+
+## Beat 1: offline memory (`reset b1`)
+
+1. **Devices & sync**: point out that device A is **offline** (red badge).
+2. **Memory & search** → device A. Machine `CNC-07`, type *Fix*, text: `CNC-07 bearing replaced, vibration normal` → **Remember**.
+3. The note lands in **Hermes** (waiting to sync). Say: *"Argus decided it's shareable machine knowledge."*
+4. Search `CNC-07 bearing trouble`: the new note is #1, **answered locally**, a few ms. The manual entries come from **Agora**.
+
+> Proves: searchable semantic memory on device; low-latency hybrid search without network.
+
+## Beat 2: privacy (`reset b2`)
+
+1. **Memory & search** → device A: `Call Ravi on 9876543210 about the night shift swap` → **Remember**.
+2. It lands in **Krypta**: *"PII rule matched: phone_in"*. No model can override that rule.
+3. **Devices & sync** → Gateway card: **Privacy audit passed · 0 private records · 0 PII matches**.
+
+> Proves: deciding dynamically what stays local, with privacy enforced by structure.
+
+## Beat 3: conflict (`reset b3`: both devices offline)
+
+1. Device A, *Status update*, `CNC-07`: `CNC-07 running normally after bearing replacement`.
+2. Device B, *Status update*, `CNC-07`: `CNC-07 still vibrating at high RPM, do not run above 8000 rpm`.
+3. Device B, *Observation*, `PRESS-02`: `PRESS-02 smoke from the motor, pressed e-stop`.
+4. **Devices & sync**: B's outbox lists the **safety-critical** smoke note first.
+5. Flip both devices **online**. Watch the activity feed: synced → pulled → **CONFLICT**.
+6. **Conflicts & decisions**: CNC-07 is **contested**, both reports side by side with their version vectors. Point at the "naive merge" box: *"Qdrant's reference pattern keeps the latest timestamp, so one technician's report would silently disappear."*
+
+> Proves: sync when connectivity returns; handling conflicting information.
+
+## Beat 4: belief over time (`reset b4`: conflict already there)
+
+1. **Conflicts & decisions**: the supervisor clicks **Keep this** on device B's report.
+2. **Memory & search** → device A: the table shows `SUP-…` **current**, both offline reports **superseded** (struck through, with arrows).
+3. Drag the **Chronos** slider left: before the resolution, device A saw CNC-07 as **contested**; after it, one belief.
+
+> Proves: evolving memory with history, not overwrites.
+
+## If something breaks
+
+- Re-run the beat's reset (`scripts/demo.py reset bN`, ~5 s) and go again.
+- A device card shows "unreachable": `scripts/demo.py status`, then `stop-all` and `start-all`.
+- Worst case: switch to the recorded video.
+
+## Video only (not live)
+
+- Kill a device mid-sync and restart it. The outbox replays with no duplicates (`test_crash_recovery_replays_outbox`, `test_sync_is_idempotent`).
+- The metrics screen: [BENCHMARKS.md](BENCHMARKS.md).

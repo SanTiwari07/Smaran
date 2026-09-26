@@ -1,0 +1,22 @@
+[
+  {"machine": "CNC-07", "kind": "status", "text": "CNC-07 status: running normally, vibration within limits at last weekly inspection"},
+  {"machine": "CNC-12", "kind": "status", "text": "CNC-12 status: running normally, spindle recalibrated last month"},
+  {"machine": "LATHE-03", "kind": "status", "text": "LATHE-03 status: running, coolant pump serviced last week"},
+  {"machine": "PRESS-02", "kind": "status", "text": "PRESS-02 status: running, hydraulic pressure nominal at 180 bar"},
+  {"machine": "ROBOT-ARM-5", "kind": "status", "text": "ROBOT-ARM-5 status: running, axis encoders calibrated"},
+
+  {"machine": "CNC-07", "kind": "manual", "text": "CNC-07 manual: spindle bearing vibration above 4.5 mm/s at high RPM indicates bearing wear; replace bearing set SKF 7014 and re-balance the spindle"},
+  {"machine": "CNC-07", "kind": "manual", "text": "CNC-07 manual: if the spindle overheats above 75 C, stop the machine, check coolant flow and lubrication oil level before restart"},
+  {"machine": "CNC-07", "kind": "manual", "text": "CNC-07 manual: tool changer jam usually comes from a worn gripper spring; replace the spring and re-teach the tool positions"},
+  {"machine": "CNC-12", "kind": "manual", "text": "CNC-12 manual: axis backlash above 0.02 mm means the ball screw nut needs adjustment; run the backlash compensation routine"},
+  {"machine": "CNC-12", "kind": "manual", "text": "CNC-12 manual: alarm 1040 means spindle drive over-current; check the drive fan and the motor cable for damage"},
+  {"machine": "LATHE-03", "kind": "manual", "text": "LATHE-03 manual: chatter marks on the workpiece come from a loose tool holder or worn chuck jaws; tighten and inspect jaws"},
+  {"machine": "LATHE-03", "kind": "manual", "text": "LATHE-03 manual: coolant pump leak at the shaft seal requires lockout tagout before replacing the mechanical seal", "criticality": 2},
+  {"machine": "PRESS-02", "kind": "manual", "text": "PRESS-02 manual: hydraulic pressure dropping below 150 bar indicates a failing pump or an internal valve leak; inspect the relief valve first"},
+  {"machine": "PRESS-02", "kind": "manual", "text": "PRESS-02 manual: never bypass the light curtain; a missing safety guard means the press must be locked out immediately", "criticality": 2},
+  {"machine": "ROBOT-ARM-5", "kind": "manual", "text": "ROBOT-ARM-5 manual: encoder drift on axis 3 causes position errors; recalibrate using the reference pin procedure"},
+  {"machine": "ROBOT-ARM-5", "kind": "manual", "text": "ROBOT-ARM-5 manual: gripper pressure fault means the pneumatic line is leaking or the regulator is set below 5 bar"},
+  {"machine": null, "kind": "manual", "text": "Plant safety rule: any smoke, sparks or burning smell means press the emergency stop and call the shift supervisor"},
+  {"machine": null, "kind": "manual", "text": "Plant procedure: lockout tagout is required before opening any machine guard or electrical cabinet", "criticality": 2},
+  {"machine": null, "kind": "manual", "text": "Plant procedure: log every bearing, belt or seal replacement with the machine id and the part number"}
+]
