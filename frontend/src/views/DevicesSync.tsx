@@ -5,9 +5,12 @@ import {
   ago, bytes, Button, Card, clock, CritBadge, Empty, ErrorNote, Indicator, SHARD_META, Stat, StatRow,
 } from "../components/ui";
 import { usePoll } from "../hooks/usePoll";
+import ProveIt from "./ProveIt";
 
 function DeviceCard({ id }: { id: string }) {
   const st = usePoll(() => api.state(id), [id]);
+  const gw = usePoll(() => api.gwStats(), [], 2000);
+  const dupes = gw.data?.devices.find((d) => d.device_id === id)?.duplicates ?? 0;
   const ob = usePoll(() => api.outbox(id), [id]);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -48,6 +51,13 @@ function DeviceCard({ id }: { id: string }) {
             <Stat label="Conflicts" value={s.contested} tone={s.contested ? "alert" : undefined} />
             <Stat label="Last sync" value={<span className="text-base">{ago(s.last_sync)}</span>} />
             <Stat label="Sent" value={<span className="text-base">{bytes(s.bytes_sent)}</span>} hint="Bytes pushed to the gateway" />
+          </StatRow>
+          <StatRow cols={4}>
+            <Stat label="Acked" value={s.acked} hint="Ops the gateway confirmed and the outbox marked done" />
+            <Stat label="Resent after restart" value={s.recovery?.pending ?? 0}
+              hint="Unacknowledged ops found in the outbox when this process last started" />
+            <Stat label="Duplicates ignored" value={dupes} hint="Resends the gateway recognised by op id and did not store again" />
+            <Stat label="Process started" value={<span className="text-base">{ago(s.recovery?.ts)}</span>} />
           </StatRow>
           {st.error && <ErrorNote error={`Lost contact: ${st.error}`} />}
           {s.last_error && s.online && <ErrorNote error={`Sync error: ${s.last_error}`} />}
@@ -168,6 +178,7 @@ export default function DevicesSync() {
           {Object.keys(DEVICES).map((d) => <DeviceCard key={d} id={d} />)}
         </div>
         <GatewayCard />
+        <ProveIt />
       </div>
       <ActivityFeed />
     </div>

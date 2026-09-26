@@ -59,8 +59,15 @@ def believed_at(payload: dict, at: float) -> bool:
     return known <= at and (until is None or until > at)
 
 
+MODES = ("hybrid", "dense", "bm25")
+
+
 def local_search(store, embedder, q: str, limit: int = 10, at: float | None = None,
-                 include_superseded: bool = False, shards=SHARDS) -> dict:
+                 include_superseded: bool = False, shards=SHARDS, mode: str = "hybrid") -> dict:
+    """mode: "hybrid" (default, dense + BM25 fused with RRF), or one list alone ("dense" /
+    "bm25"), used by the retrieval-quality benchmark to show what each half contributes."""
+    if mode not in MODES:
+        raise ValueError(f"mode must be one of {MODES}")
     t0 = time.perf_counter()
     dq, sq = embedder.embed_query(q)
     t1 = time.perf_counter()
@@ -69,7 +76,7 @@ def local_search(store, embedder, q: str, limit: int = 10, at: float | None = No
     dense = global_list({s: store.vector_search(s, dq, "dense", k, flt) for s in shards})
     wq = store.idf_query(sq)
     sparse = global_list({s: store.vector_search(s, wq, "bm25", k, flt) for s in shards})
-    fused = rrf_fuse([dense, sparse])
+    fused = rrf_fuse({"hybrid": [dense, sparse], "dense": [dense], "bm25": [sparse]}[mode])
     seen = {op_id: sp for op_id, sp in dense}
     seen.update({op_id: sp for op_id, sp in sparse if op_id not in seen})
     hits = []

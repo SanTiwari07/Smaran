@@ -43,6 +43,9 @@ export interface DeviceState {
   last_error: string | null;
   last_server_seq: number;
   bytes_sent: number;
+  acked: number;
+  /** What the last process start found: unacknowledged outbox ops it will send again. */
+  recovery: { ts: number; pending: number; restored: number } | null;
   counts: { krypta: number; hermes: number; agora: number };
   contested: number;
   classifier: string;
@@ -117,6 +120,34 @@ export interface Audit {
   pii_hits: number;
   offenders: string[];
   ok: boolean;
+}
+
+/** A "Prove it" check result: `ok` plus the measured fields of that check. */
+export interface Proof {
+  ok: boolean;
+  command?: string;
+  error?: string;
+  [k: string]: unknown;
+}
+
+export interface LatencyProof extends Proof {
+  queries: number;
+  memories: number;
+  network: string;
+  search_p50_ms: number;
+  search_p95_ms: number;
+  total_p50_ms: number;
+}
+
+export interface ModeScores { "hit@1": number; "hit@5": number; mrr: number; n: number }
+
+export interface Benchmarks {
+  skipped?: string;
+  generated?: number;
+  retrieval?: { queries: number; corpus: number; modes: Record<"hybrid" | "dense" | "bm25", { all: ModeScores }> };
+  bandwidth?: { saved_by_selection_pct: number; saved_total_pct: number; avg_op_bytes_json: number; avg_op_bytes_f16: number };
+  snapshots?: { skipped?: string; partial_snapshot_bytes?: number; full_snapshot_after_bytes?: number; partial_vs_full_pct?: number };
+  latency?: { search_p50_ms: number; search_p95_ms: number; memories: number };
 }
 
 export interface ContestedGroup {

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { api } from "../api/client";
 import type { Kind, NoteResult, SearchResult, Shard } from "../api/types";
 import {
-  Badge, Button, Card, clock, CritBadge, Empty, ErrorNote, inputCls, ShardBadge, StatusBadge, vvText,
+  Badge, Button, Card, clock, CritBadge, Empty, ErrorNote, inputCls, ShardBadge, StatusBadge, vvText, WhyHere,
 } from "../components/ui";
 import { usePoll } from "../hooks/usePoll";
 
@@ -84,6 +84,13 @@ function SearchPanel({ device, bump }: { device: string; bump: number }) {
   };
   // re-run the current search when a note is written or the device changes
   useEffect(() => { if (res) run(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [device, bump]);
+  // the auto demo types a query here
+  useEffect(() => {
+    const onSearch = (e: Event) => { const query = (e as CustomEvent<string>).detail; setQ(query); run(query); };
+    window.addEventListener("smaran:search", onSearch);
+    return () => window.removeEventListener("smaran:search", onSearch);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [device]);
 
   return (
     <Card title="Hybrid search, dense + BM25"
@@ -113,6 +120,7 @@ function SearchPanel({ device, bump }: { device: string; bump: number }) {
                   </span>
                 </div>
                 <p className="text-sm">{h.payload.text}</p>
+                <WhyHere decision={h.payload.decision} shard={h.shard} />
                 <p className="mt-1 font-mono text-xs text-faint">{h.payload.op_id} / {h.payload.device_id} / {h.payload.machine ?? "no machine"}</p>
               </li>
             ))}
@@ -183,6 +191,7 @@ function MemoryTable({ device, bump }: { device: string; bump: number }) {
                   <td className={`pr-2 ${m.status === "superseded" ? "text-faint line-through" : ""}`}>
                     {m.text}
                     <div className="font-mono text-xs text-faint no-underline">{m.op_id}{m.superseded_by ? ` → ${m.superseded_by}` : ""}</div>
+                    <WhyHere decision={m.decision} />
                   </td>
                   <td className="font-mono text-xs text-muted">{vvText(m.vv)}</td>
                 </tr>

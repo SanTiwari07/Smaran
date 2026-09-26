@@ -3,7 +3,8 @@
     python -m bench.bench                  # all, writes bench/results.json + docs/BENCHMARKS.md
     python -m bench.bench latency conflicts
 
-Sections: latency, conflicts, convergence, bandwidth, classifier, audit (needs a running gateway).
+Sections: latency, retrieval, conflicts, convergence, bandwidth, classifier, rehearsals (reads
+logs/rehearsal.log), audit (needs a running gateway), snapshots (needs Qdrant Server).
 """
 import csv
 import json
@@ -21,9 +22,12 @@ from backend.common.config import MACHINES, settings
 from backend.common.log import Log
 from backend.common.schema import AGORA, HERMES, NoteIn
 from backend.common.themis import CONTESTED, CURRENT, naive_merge, next_vv, resolve
+from backend.common.vectors import pack, unpack
 from backend.device.classifier import load_classifier
 from backend.device.core import Device
 from backend.device.embed import get_embedder
+from bench.partial_snapshot import bench_snapshots, to_markdown as snapshots_md
+from bench.retrieval import bench_retrieval, to_markdown as retrieval_md
 from bench.simulate import run as simulate
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -122,6 +126,14 @@ def bench_conflicts(n=50, seed=11) -> dict:
 
 # ---------------------------------------------------------------------------------------
 def bench_bandwidth(emb, n=500, seed=5) -> dict:
+    """Bytes pushed to the gateway for one note script.
+
+    Two effects, reported separately so neither hides the other:
+    - selection: Smaran sends only notes that should sync (same op format on both sides)
+    - encoding:  dense vectors as base64 float16 instead of JSON floats (VECTOR_TRANSPORT)
+    The baseline is "sync everything, vectors as JSON floats", which is the old Smaran format
+    and what a naive dual-write of every note sends.
+    """
     rng = random.Random(seed)
     corpus = notes_corpus()
     script = [rng.choice(corpus) for _ in range(n)]
@@ -130,18 +142,41 @@ def bench_bandwidth(emb, n=500, seed=5) -> dict:
         dev.set_online(False)
         for r in script:
             dev.add_note(NoteIn(text=r["text"], kind=r["kind"], machine=r["machine"] or None))
-        pending = dev.db.pending_bodies()
-        smaran_bytes = sum(len(json.dumps({"device_id": dev.id, "ops": [b]})) for _, b in pending)
-        avg = smaran_bytes / max(len(pending), 1)
-        everything = int(avg * n)       # sync-everything sends every note with the same op format
+        pending = [b for _, b in dev.db.pending_bodies()]
         decisions = dev.db.decisions(10_000)
         dev.close()
+
+    def size(body: dict, transport: str) -> int:
+        v = unpack(body["vectors"])
+        wire = {**body, "vectors": pack(v["dense"], v["bm25"], transport)}
+        return len(json.dumps({"device_id": "bench", "ops": [wire]}))
+
+    json_sizes = [size(b, "json") for b in pending]
+    f16_sizes = [size(b, "f16") for b in pending]
+    avg_json = sum(json_sizes) / max(len(pending), 1)
+    avg_f16 = sum(f16_sizes) / max(len(pending), 1)
+    everything_json = int(avg_json * n)     # every note, JSON-float vectors
     counts = {}
     for d in decisions:
         counts[d["residency"]] = counts.get(d["residency"], 0) + 1
-    return {"notes": n, "residency": counts, "smaran_bytes": smaran_bytes, "sync_everything_bytes": everything,
-            "saved_pct": round(100 * (1 - smaran_bytes / everything), 1),
+    smaran_json, smaran_f16 = sum(json_sizes), sum(f16_sizes)
+    return {"notes": n, "residency": counts, "ops_sent": len(pending),
+            "avg_op_bytes_json": round(avg_json), "avg_op_bytes_f16": round(avg_f16),
+            "sync_everything_json_bytes": everything_json,
+            "smaran_json_bytes": smaran_json, "smaran_f16_bytes": smaran_f16,
+            "saved_by_selection_pct": round(100 * (1 - smaran_json / everything_json), 1),
+            "saved_total_pct": round(100 * (1 - smaran_f16 / everything_json), 1),
+            "transport": settings.vector_transport,
             "private_kept_on_device": counts.get("private", 0)}
+
+
+def _retrieval(emb) -> dict:
+    with _tmpdir() as td:
+        def make(e) -> Device:
+            dev = _device(Path(td), e, "retrieval")
+            dev.set_online(False)
+            return dev
+        return bench_retrieval(emb, make)
 
 
 def bench_classifier() -> dict:
@@ -150,6 +185,35 @@ def bench_classifier() -> dict:
         return {"skipped": "run: python -m ml.train"}
     rep = json.loads(p.read_text(encoding="utf8"))
     return {k: rep[k] for k in ("n_train", "n_test", "rules-only", "logreg (alone)", "logreg + rules (shipped)", "label_agreement")}
+
+
+def bench_rehearsals() -> dict:
+    """Summarise logs/rehearsal.log (written by scripts/demo.py rehearse), newest session per beat set.
+
+    A session is a run of consecutive lines with the same Qdrant target, commit and beats.
+    """
+    path = ROOT / "logs" / "rehearsal.log"
+    if not path.exists():
+        return {"skipped": "no logs/rehearsal.log: run python scripts/demo.py rehearse"}
+    rows = [json.loads(line) for line in path.read_text(encoding="utf8").splitlines() if line.strip()]
+    rows = [r for r in rows if "qdrant" in r]          # older lines didn't record the target
+    sessions: list[dict] = []
+    for r in rows:
+        beats = sorted(k for k in r if k.startswith("b") and k[1:].isdigit())
+        key = (r["qdrant"], r["commit"], tuple(beats))
+        if sessions and sessions[-1]["key"] == key and r["run"] == sessions[-1]["runs"] + 1:
+            s_ = sessions[-1]
+        else:
+            s_ = {"key": key, "runs": 0, "passed": 0, "ts": r["ts"]}
+            sessions.append(s_)
+        s_["runs"] += 1
+        s_["passed"] += all(r[b] for b in beats)
+    latest: dict[tuple, dict] = {}
+    for s_ in sessions:
+        latest[(s_["key"][0], s_["key"][2])] = s_
+    return {"sessions": [{"qdrant": k[0], "commit": v["key"][1], "beats": list(k[1]), "runs": v["runs"],
+                          "passed": v["passed"], "date": time.strftime("%Y-%m-%d %H:%M", time.localtime(v["ts"]))}
+                         for k, v in latest.items()]}
 
 
 def bench_audit() -> dict:
@@ -171,6 +235,8 @@ def to_markdown(r: dict) -> str:
               "| | p50 | p95 | target |", "|---|---|---|---|",
               f"| Search only | {x['search_p50_ms']} ms | {x['search_p95_ms']} ms | < 20 / 50 ms |",
               f"| Including query embedding | {x['with_embedding_p50_ms']} ms | {x['with_embedding_p95_ms']} ms | |", ""]
+    if "retrieval" in r:
+        L += retrieval_md(r["retrieval"])
     if "conflicts" in r:
         x = r["conflicts"]
         L += ["## Conflict accuracy (Themis vs naive last-writer-wins)", "",
@@ -192,12 +258,18 @@ def to_markdown(r: dict) -> str:
     if "bandwidth" in r:
         x = r["bandwidth"]
         L += ["## Bandwidth", "",
-              f"The same {x['notes']}-note script, Smaran vs syncing every note. Decisions: "
-              + ", ".join(f"{k} {v}" for k, v in sorted(x['residency'].items())) + ".", "",
-              f"- Smaran: {x['smaran_bytes']:,} bytes · sync-everything: {x['sync_everything_bytes']:,} bytes",
-              f"- **Saved: {x['saved_pct']}%** (target >= 40%) · private notes kept on device: {x['private_kept_on_device']}",
-              "- Savings come only from what is *not* sent. Each op is ~9 KB because the 384-d dense vector travels as "
-              "JSON text; sending float16 binary (or letting the server re-embed) would cut every op by ~5x.", ""]
+              f"The same {x['notes']}-note script. Decisions: "
+              + ", ".join(f"{k} {v}" for k, v in sorted(x['residency'].items()))
+              + f". Baseline: sync every note with the dense vector as JSON floats.", "",
+              "| | Bytes pushed | Saved vs baseline |", "|---|---|---|",
+              f"| Baseline: every note, JSON-float vectors | {x['sync_everything_json_bytes']:,} | |",
+              f"| Smaran, selection only (JSON-float vectors) | {x['smaran_json_bytes']:,} | {x['saved_by_selection_pct']}% |",
+              f"| **Smaran, selection + float16 vectors (shipped)** | **{x['smaran_f16_bytes']:,}** | **{x['saved_total_pct']}%** |", "",
+              f"- Target >= 40%. Selection alone saves {x['saved_by_selection_pct']}% (it missed the target on its own); "
+              f"float16 transport takes the total to {x['saved_total_pct']}%.",
+              f"- Average op: {x['avg_op_bytes_json']:,} bytes with JSON floats, {x['avg_op_bytes_f16']:,} bytes with float16 "
+              f"({x['ops_sent']} ops sent). Private notes kept on device: {x['private_kept_on_device']}.",
+              "- float16 changes cosine similarity by < 0.001 (`backend/tests/test_vectors.py`).", ""]
     if "classifier" in r:
         x = r["classifier"]
         if "skipped" not in x:
@@ -210,6 +282,21 @@ def to_markdown(r: dict) -> str:
             L += ["", f"Label agreement: {x['label_agreement']}", "",
                   "Caveats: the hand-written set is small (60 test notes), and the criticality combination rule "
                   "was chosen after looking at these results, so treat those numbers as optimistic.", ""]
+    if "rehearsals" in r:
+        x = r["rehearsals"]
+        L += ["## Demo rehearsals", "",
+              "`python scripts/demo.py rehearse` resets and plays each beat with automated checks; every run is "
+              "logged to `logs/rehearsal.log` with the Qdrant target and git commit. Latest session per target and beat set:", ""]
+        if "skipped" in x:
+            L += [f"- {x['skipped']}", ""]
+        else:
+            L += ["| Qdrant target | Beats | Passed | Commit | Date |", "|---|---|---|---|---|"]
+            for s_ in x["sessions"]:
+                L.append(f"| `{s_['qdrant']}` | {' '.join(s_['beats'])} | **{s_['passed']}/{s_['runs']}** | "
+                         f"{s_['commit']} | {s_['date']} |")
+            L.append("")
+    if "snapshots" in r:
+        L += snapshots_md(r["snapshots"])
     if "audit" in r:
         x = r["audit"]
         L += ["## Personal data on the server", ""]
@@ -220,14 +307,17 @@ def to_markdown(r: dict) -> str:
 
 
 def main(sections: list[str]) -> None:
-    sections = sections or ["latency", "conflicts", "convergence", "bandwidth", "classifier", "audit"]
+    sections = sections or ["latency", "retrieval", "conflicts", "convergence", "bandwidth", "classifier",
+                            "rehearsals", "audit", "snapshots"]
     results = json.loads(OUT_JSON.read_text(encoding="utf8")) if OUT_JSON.exists() else {}
-    emb = get_embedder("fastembed") if {"latency", "bandwidth"} & set(sections) else None
+    emb = get_embedder("fastembed") if {"latency", "bandwidth", "retrieval"} & set(sections) else None
     for s in sections:
         t = time.perf_counter()
         results[s] = {"latency": lambda: bench_latency(emb), "conflicts": bench_conflicts,
+                      "retrieval": lambda: _retrieval(emb),
                       "convergence": lambda: simulate(1000, 5), "bandwidth": lambda: bench_bandwidth(emb),
-                      "classifier": bench_classifier, "audit": bench_audit}[s]()
+                      "classifier": bench_classifier, "rehearsals": bench_rehearsals, "audit": bench_audit,
+                      "snapshots": bench_snapshots}[s]()
         print(f"{s}: {results[s]}  ({time.perf_counter() - t:.1f}s)")
     OUT_JSON.write_text(json.dumps(results, indent=2), encoding="utf8")
     OUT_MD.write_text(to_markdown(results), encoding="utf8")

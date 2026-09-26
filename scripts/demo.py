@@ -2,9 +2,12 @@
 
     python scripts/demo.py start-all [--qdrant server|embedded] [--no-frontend]
     python scripts/demo.py status
-    python scripts/demo.py reset base|b1|b2|b3|b4     # known state in a few seconds
-    python scripts/demo.py play  b1|b2|b3|b4          # run a beat's actions and check them
-    python scripts/demo.py rehearse [--runs 10]       # reset+play every beat, log to logs/rehearsal.log
+    python scripts/demo.py reset base|b1|b2|b3|b4|b5  # known state in a few seconds
+    python scripts/demo.py play  b1|b2|b3|b4|b5       # run a beat's actions and check them
+    python scripts/demo.py rehearse [--runs 10] [--beats b1 b2 b3 b4 b5]
+                                                      # reset+play beats, log to logs/rehearsal.log
+    python scripts/demo.py kill A|B                   # hard-kill a device process (no clean shutdown)
+    python scripts/demo.py start A|B                  # start one device again (after kill or b5)
     python scripts/demo.py stop-all
 
 Beats (plan section 10):
@@ -12,6 +15,8 @@ Beats (plan section 10):
   b2 privacy          note with a phone number -> Krypta; server audit stays 0
   b3 conflict         A and B offline write different CNC-07 statuses -> online -> contested
   b4 belief over time supervisor resolves -> history shows what A believed before
+  b5 pull the plug     A offline writes 3 notes -> A crashes right after the gateway stored them,
+                       before it recorded the acks -> restart -> resend -> 0 duplicate memories
 """
 import argparse
 import json
@@ -37,6 +42,7 @@ GW = settings.gateway_url
 DEV = {d: f"http://127.0.0.1:{p}" for d, p in settings.device_ports.items()}
 WIN = os.name == "nt"
 EK = "machine:CNC-07/status"
+BEATS = ["b1", "b2", "b3", "b4", "b5"]
 
 
 # ---- process management ---------------------------------------------------------------
@@ -116,6 +122,52 @@ def stop_all(_args=None) -> None:
     PIDS.unlink()
 
 
+def _pids() -> dict:
+    if not PIDS.exists():
+        raise SystemExit("no runtime/pids.json: start the stack with start-all first")
+    return json.loads(PIDS.read_text())
+
+
+def _hard_kill(pid: int) -> None:
+    if WIN:
+        subprocess.run(["taskkill", "/T", "/F", "/PID", str(pid)], capture_output=True)
+    else:
+        try:
+            os.killpg(pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+
+
+def _down(url: str, timeout: float = 15) -> bool:
+    end = time.time() + timeout
+    while time.time() < end:
+        try:
+            httpx.get(url, timeout=1)
+        except httpx.HTTPError:
+            return True
+        time.sleep(0.3)
+    return False
+
+
+def kill_device(d: str) -> None:
+    pids = _pids()
+    _hard_kill(pids[f"device-{d}"])
+    print(f"device {d}: {'killed' if _down(DEV[d] + '/health') else 'STILL UP'}")
+
+
+def start_device(d: str) -> bool:
+    pids = _pids()
+    old = pids.get(f"device-{d}")
+    if old:
+        _hard_kill(old)          # no-op if it already died
+        _down(DEV[d] + "/health", 5)
+    pids[f"device-{d}"] = spawn(f"device-{d}", [PY, "-m", "backend.device", "--id", d])
+    PIDS.write_text(json.dumps(pids, indent=2))
+    up = wait_up(DEV[d] + "/health")
+    print(f"device {d}: {'up' if up else 'FAILED (logs/device-' + d + '.out)'}  {DEV[d]}")
+    return up
+
+
 def status(_args=None) -> None:
     for name, url in {"gateway": GW, **{f"device-{d}": u for d, u in DEV.items()}}.items():
         try:
@@ -166,6 +218,8 @@ def reset(beat: str) -> None:
         online("B", False)
     elif beat == "b4":
         _make_conflict()
+    elif beat == "b5":
+        online("A", False)
     print(f"reset {beat} in {time.time() - t:.1f}s")
 
 
@@ -226,15 +280,55 @@ def play(beat: str) -> bool:
                     "after resolving, A believes the supervisor's version")
         ok &= check(then[EK]["status"] == "contested", "history: before resolving, A saw a contested status")
         ok &= check(get(f"{GW}/contested") == [], "no conflicts left")
+    elif beat == "b5":
+        texts = ["CNC-12 coolant concentration low, topped up to 7 percent",
+                 "ROBOT-ARM-5 sparks at the cable carrier, cell stopped",
+                 "LATHE-03 chuck jaws replaced, runout back to 0.01 mm"]
+        ops = [note("A", t, "observation")["memory"]["op_id"] for t in texts]
+        queued = [o for o in ops if o in {x["op_id"] for x in get(f"{DEV['A']}/outbox")}]
+        ok &= check(len(queued) == len(texts), f"{len(queued)} notes queued in A's outbox while offline")
+        try:
+            HTTP.post(f"{DEV['A']}/admin/crash", timeout=10)
+        except httpx.HTTPError:
+            pass                                   # the process died mid-request, as intended
+        ok &= check(_down(DEV["A"] + "/health"), "device A crashed after the gateway stored the batch")
+        gw_a = {d["device_id"]: d for d in get(f"{GW}/stats")["devices"]}.get("A", {})
+        ok &= check(gw_a.get("ops") == len(queued), f"gateway stored {gw_a.get('ops')} of A's ops before the crash")
+        ok &= check(start_device("A"), "device A restarted")
+        st = get(f"{DEV['A']}/state")
+        rec = st.get("recovery") or {}
+        ok &= check(rec.get("pending") == len(queued) and st["outbox_depth"] == len(queued),
+                    f"restart found {rec.get('pending')} unacknowledged ops in the outbox")
+        online("A", True)
+        sync("A")
+        st = get(f"{DEV['A']}/state")
+        gw_a = {d["device_id"]: d for d in get(f"{GW}/stats")["devices"]}["A"]
+        ok &= check(st["outbox_depth"] == 0, "outbox drained after the resend")
+        ok &= check(gw_a["duplicates"] == len(queued), f"gateway ignored {gw_a['duplicates']} resent duplicates")
+        on_server = [m["op_id"] for m in get(f"{GW}/memories") if m["op_id"] in queued]
+        ok &= check(sorted(on_server) == sorted(queued), f"each op stored exactly once ({len(on_server)} on the server)")
+        points = get(f"{GW}/stats")["points"]
+        ok &= check(st["counts"]["agora"] == points,
+                    f"A's fleet mirror is complete after the crash ({st['counts']['agora']} of {points})")
     return ok
 
 
-def rehearse(runs: int) -> None:
+def _commit() -> str:
+    r = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=ROOT, capture_output=True, text=True)
+    dirty = subprocess.run(["git", "status", "--porcelain", "--untracked-files=no"], cwd=ROOT,
+                           capture_output=True, text=True).stdout.strip()
+    return (r.stdout.strip() or "unknown") + ("+dirty" if dirty else "")
+
+
+def rehearse(runs: int, beats: list[str]) -> None:
     passed = 0
+    mode = get(f"{GW}/health")["server"]          # e.g. server:http://127.0.0.1:6333/smaran
+    commit = _commit()
+    print(f"rehearsing {' '.join(beats)} x{runs} against {mode} at {commit}")
     with (LOGS / "rehearsal.log").open("a", encoding="utf8") as log:
         for i in range(1, runs + 1):
             results = {}
-            for beat in ("b1", "b2", "b3", "b4"):
+            for beat in beats:
                 print(f"run {i} {beat}")
                 try:
                     reset(beat)
@@ -243,8 +337,8 @@ def rehearse(runs: int) -> None:
                     print(f"  [FAIL] {beat}: {e}")
                     results[beat] = False
             passed += all(results.values())
-            log.write(json.dumps({"ts": time.time(), "run": i, **results}) + "\n")
-    print(f"\n{passed}/{runs} full rehearsals passed (logged to logs/rehearsal.log)")
+            log.write(json.dumps({"ts": time.time(), "run": i, "qdrant": mode, "commit": commit, **results}) + "\n")
+    print(f"\n{passed}/{runs} full rehearsals passed against {mode} (logged to logs/rehearsal.log)")
 
 
 def main() -> None:
@@ -256,11 +350,14 @@ def main() -> None:
     sub.add_parser("stop-all")
     sub.add_parser("status")
     r = sub.add_parser("reset")
-    r.add_argument("beat", choices=["base", "b1", "b2", "b3", "b4"])
+    r.add_argument("beat", choices=["base", *BEATS])
     p = sub.add_parser("play")
-    p.add_argument("beat", choices=["b1", "b2", "b3", "b4"])
+    p.add_argument("beat", choices=BEATS)
     h = sub.add_parser("rehearse")
     h.add_argument("--runs", type=int, default=10)
+    h.add_argument("--beats", nargs="+", choices=BEATS, default=["b1", "b2", "b3", "b4"])
+    for name in ("kill", "start"):
+        sub.add_parser(name).add_argument("device", choices=sorted(DEV))
     w = sub.add_parser("wipe", help="delete runtime/ state (services must be stopped)")
     a = ap.parse_args()
     if a.cmd == "start-all":
@@ -275,7 +372,11 @@ def main() -> None:
         reset(a.beat)
         sys.exit(0 if play(a.beat) else 1)
     elif a.cmd == "rehearse":
-        rehearse(a.runs)
+        rehearse(a.runs, a.beats)
+    elif a.cmd == "kill":
+        kill_device(a.device)
+    elif a.cmd == "start":
+        sys.exit(0 if start_device(a.device) else 1)
     elif a.cmd == "wipe":
         for p_ in (ROOT / "runtime").iterdir():
             if p_.name != ".gitkeep":

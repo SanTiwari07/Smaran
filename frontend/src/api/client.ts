@@ -2,8 +2,8 @@
 // VITE_USE_MOCK=1 (npm run dev:mock) swaps in src/mock/, so a UI bug can be told apart
 // from a backend bug: if it still happens on mock data, it's in the frontend.
 import type {
-  ActivityItem, Audit, Belief, ContestedGroup, DecisionRow, DeviceState, GatewayStats, Kind,
-  Memory, NoteResult, OutboxItem, SearchResult,
+  ActivityItem, Audit, Belief, Benchmarks, ContestedGroup, DecisionRow, DeviceState, GatewayStats, Kind,
+  LatencyProof, Memory, NoteResult, OutboxItem, Proof, SearchResult,
 } from "./types";
 import { mockApi } from "../mock/mock";
 
@@ -53,6 +53,14 @@ const realApi = {
     req<{ op_id: string; result: string }>(`${GATEWAY}/resolve`, {
       method: "POST", body: JSON.stringify({ entity_key, op_id, text }),
     }),
+  // "Prove it" checks (re-run a headline claim live) and demo resets (auto mode)
+  proveLatency: (d: string) => req<LatencyProof>(`${DEVICES[d]}/prove/latency?n=50`),
+  proveConflicts: () => req<Proof>(`${GATEWAY}/prove/conflicts`),
+  proveConvergence: () => req<Proof>(`${GATEWAY}/prove/convergence?runs=100`),
+  proveIdempotency: () => req<Proof>(`${GATEWAY}/prove/idempotency`, { method: "POST" }),
+  proveBenchmarks: () => req<Benchmarks>(`${GATEWAY}/prove/benchmarks`),
+  gwReset: () => req<unknown>(`${GATEWAY}/admin/reset?seed=true`, { method: "POST" }),
+  devReset: (d: string) => req<DeviceState>(`${DEVICES[d]}/admin/reset?online=true`, { method: "POST" }),
 };
 
 export type Api = typeof realApi;

@@ -13,6 +13,7 @@ from ..common import themis
 from ..common.config import settings
 from ..common.log import Log
 from ..common.schema import AGORA, HERMES, KRYPTA, SHARDS, NoteIn, entity_key_for
+from ..common.vectors import dense_of, pack
 from .embed import Embedder, sparse_from_json, sparse_to_json
 from .outbox import DeviceDB
 from .router import Router
@@ -34,6 +35,7 @@ class Device:
         self.router = Router(classifier, self.store)
         self.activity: deque = deque(maxlen=300)
         self.last_write = 0.0
+        self.recovery: dict = {}
         self.recover()
 
     # ---- state -----------------------------------------------------------------------
@@ -56,7 +58,8 @@ class Device:
             "device_id": self.id, "online": self.online, "outbox_depth": self.db.depth(),
             "last_sync": self.db.get("last_sync"), "last_error": self.db.get("last_error"),
             "last_server_seq": self.db.get("last_server_seq", 0),
-            "bytes_sent": self.db.get("bytes_sent", 0),
+            "bytes_sent": self.db.get("bytes_sent", 0), "acked": self.db.acked(),
+            "recovery": self.recovery,
             "counts": {s: self.store.count(s) for s in SHARDS},
             "contested": self.store.count(HERMES, _status("contested")) + self.store.count(AGORA, _status("contested")),
             "classifier": self.classifier.name, "embedder": self.embedder.name,
@@ -64,15 +67,39 @@ class Device:
 
     # ---- crash recovery --------------------------------------------------------------
     def recover(self) -> None:
-        """Replay pending outbox rows into Hermes (the shard write may not have happened)."""
-        replayed = 0
-        for op_id, body in self.db.pending_bodies():
+        """On start, rebuild whatever a hard crash may have cost the Edge shards (see outbox.py):
+
+        1. Hermes: replay pending outbox rows whose shard write was lost. Hermes sends them
+           again; the gateway ignores any it already stored (idempotency by op_id), so a crash
+           between "gateway stored" and "device acked" costs a duplicate send, never a
+           duplicate memory.
+        2. Krypta: replay the local journal.
+        3. Agora: after an unclean shutdown, pull the change feed again from the start.
+        4. Re-run Themis for every known entity (lost set_payload status changes).
+        """
+        clean = bool(self.db.get("clean_shutdown", True))
+        pending = self.db.pending_bodies()
+        restored = 0
+        for op_id, body in pending:
             if self.store.get(HERMES, op_id) is None and self.store.get(AGORA, op_id) is None:
                 v = body["vectors"]
-                self.store.upsert(HERMES, op_id, v["dense"], sparse_from_json(v["bm25"]), body["payload"])
-                replayed += 1
-        if replayed:
-            self.event("recovered", count=replayed)
+                self.store.upsert(HERMES, op_id, dense_of(v), sparse_from_json(v["bm25"]), body["payload"])
+                restored += 1
+        krypta = 0
+        for op_id, body in self.db.journal_bodies():
+            if self.store.get(KRYPTA, op_id) is None:
+                self.store.upsert(KRYPTA, op_id, body["dense"], sparse_from_json(body["bm25"]), body["payload"])
+                krypta += 1
+        if not clean:
+            self.db.set("last_server_seq", 0)
+        keys = {r.payload["entity_key"] for s in (HERMES, AGORA) for r in self.store.scroll(s) if r.payload.get("entity_key")}
+        for ek in keys:
+            self.resolve_entity(ek)
+        self.db.set("clean_shutdown", False)       # set back to True only by close()
+        self.recovery = {"ts": time.time(), "clean": clean, "pending": len(pending),
+                         "restored": restored, "krypta_restored": krypta}
+        if pending or krypta or not clean:
+            self.event("recovered", count=len(pending), restored=restored, krypta_restored=krypta, clean=clean)
 
     # ---- write path ------------------------------------------------------------------
     def add_note(self, note: NoteIn) -> dict:
@@ -95,10 +122,11 @@ class Device:
         shard = None
         if decision.residency == "private":
             shard = KRYPTA
+            self.db.journal_put(op_id, {"dense": dense, "bm25": sparse_to_json(sparse), "payload": payload})
             self.store.upsert(KRYPTA, op_id, dense, sparse, payload)
         elif decision.residency == "sync":
             shard = HERMES
-            body = {"op_id": op_id, "vectors": {"dense": dense, "bm25": sparse_to_json(sparse)}, "payload": payload}
+            body = {"op_id": op_id, "vectors": pack(dense, sparse_to_json(sparse)), "payload": payload}
             self.db.enqueue(op_id, decision.criticality, seq, body)   # outbox FIRST: crash-safe
             self.store.upsert(HERMES, op_id, dense, sparse, payload)
             if ek:
@@ -139,7 +167,7 @@ class Device:
             if local:
                 p["status"], p["superseded_by"] = local.payload.get("status"), local.payload.get("superseded_by")
             v = pt["vectors"]
-            self.store.upsert(AGORA, op_id, v["dense"], sparse_from_json(v["bm25"]), p)
+            self.store.upsert(AGORA, op_id, dense_of(v), sparse_from_json(v["bm25"]), p)
             if self.store.get(HERMES, op_id) is not None:
                 self.store.delete(HERMES, op_id)         # now fleet knowledge; the outbox already acked it
                 self.db.ack([op_id])
@@ -152,11 +180,14 @@ class Device:
         return len(points)
 
     # ---- reads -----------------------------------------------------------------------
-    def search(self, q: str, limit: int = 10, at: float | None = None, include_superseded: bool = False) -> dict:
-        res = local_search(self.store, self.embedder, q, limit, at, include_superseded)
+    def search(self, q: str, limit: int = 10, at: float | None = None, include_superseded: bool = False,
+               mode: str = "hybrid") -> dict:
+        res = local_search(self.store, self.embedder, q, limit, at, include_superseded, mode=mode)
+        res["mode"] = mode
         dq, sq = res.pop("query_vectors")
         res["answered"] = "local"
-        if at is None and self.online and self.http is not None and res["top_dense"] < settings.escalate_at:
+        if (at is None and mode == "hybrid" and self.online and self.http is not None
+                and res["top_dense"] < settings.escalate_at):
             try:
                 r = self.http.post("/search", json={"dense": dq, "bm25": sparse_to_json(sq), "limit": limit})
                 r.raise_for_status()
@@ -170,6 +201,19 @@ class Device:
             except Exception as e:  # noqa: BLE001  cloud is a backup, never a crutch
                 self.event("escalation_failed", error=str(e))
         return res
+
+    def prove_latency(self, n: int = 50) -> dict:
+        """Run n hybrid searches on this device's current memory, never touching the network
+        (local_search only: no cloud escalation). Target from the plan: p50 < 20 ms, p95 < 50 ms."""
+        search_ms, total_ms = [], []
+        for i in range(n):
+            r = local_search(self.store, self.embedder, PROBE_QUERIES[i % len(PROBE_QUERIES)], 10)
+            search_ms.append(r["search_ms"])
+            total_ms.append(r["latency_ms"])
+        p50, p95 = _pct(search_ms, 50), _pct(search_ms, 95)
+        return {"queries": n, "memories": sum(self.store.count(s) for s in SHARDS), "network": "none",
+                "search_p50_ms": p50, "search_p95_ms": p95, "total_p50_ms": _pct(total_ms, 50),
+                "ok": p50 < 20 and p95 < 50, "command": "python -m bench.bench latency"}
 
     def memories(self, shard: str | None = None, status: str | None = None, machine: str | None = None,
                  limit: int = 500) -> list[dict]:
@@ -202,12 +246,26 @@ class Device:
         t0 = time.perf_counter()
         self.store.clear()
         self.db.reset()
+        self.db.set("clean_shutdown", False)
         self.activity.clear()
         self.event("reset", ms=round((time.perf_counter() - t0) * 1000))
 
     def close(self) -> None:
-        self.store.close()
+        if not self.store.shards:                # already closed
+            return
+        self.store.close()                       # closing an Edge shard persists it
+        self.db.set("clean_shutdown", True)
         self.db.close()
+
+
+PROBE_QUERIES = ["CNC-07 bearing trouble", "spindle overheating", "hydraulic pressure low on PRESS-02",
+                 "coolant pump leak", "robot gripper pressure fault", "alarm 1040", "lockout tagout",
+                 "chatter marks on the lathe", "smoke from the motor", "encoder drift on axis 3"]
+
+
+def _pct(xs: list[float], p: float) -> float:
+    xs = sorted(xs)
+    return round(xs[min(len(xs) - 1, int(p / 100 * len(xs)))], 2)
 
 
 def _status(s: str) -> Filter:

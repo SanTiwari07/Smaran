@@ -135,6 +135,7 @@ class Store:
     def set_payload(self, shard: str, op_id: str, payload: dict) -> None:
         with self.lock:
             self.shards[shard].update(UpdateOperation.set_payload(point_ids=[point_id(op_id)], payload=payload))
+            self.dirty = True
 
     def delete(self, shard: str, op_id: str) -> None:
         with self.lock:

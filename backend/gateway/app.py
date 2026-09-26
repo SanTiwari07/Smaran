@@ -1,9 +1,10 @@
 """Gateway HTTP API. Routes stay thin: parse, call Gateway, return."""
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from ..common.config import settings
 from ..common.schema import ResolveIn, SearchIn, SyncBatch
+from . import proofs
 from .core import Gateway
 
 
@@ -50,6 +51,23 @@ def create_app(gw: Gateway) -> FastAPI:
     @app.get("/memories")
     def memories(limit: int = 500):
         return gw.memories(limit)
+
+    # ---- "Prove it": re-run a headline claim live (see proofs.py) ----------------------
+    @app.get("/prove/conflicts")
+    def prove_conflicts():
+        return proofs.conflicts()
+
+    @app.get("/prove/convergence")
+    def prove_convergence(runs: int = Query(100, ge=1, le=1000)):
+        return proofs.convergence(runs)
+
+    @app.post("/prove/idempotency")
+    def prove_idempotency():
+        return proofs.idempotency(gw)
+
+    @app.get("/prove/benchmarks")
+    def prove_benchmarks():
+        return proofs.benchmarks()
 
     @app.post("/admin/reset")
     def reset(seed: bool = True):

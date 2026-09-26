@@ -9,6 +9,7 @@ from ..common.config import MACHINES
 from ..common.schema import SHARDS, NoteIn, OnlineIn
 from .core import Device
 from .hermes import Hermes
+from .search import MODES
 
 
 def create_app(device: Device, hermes: Hermes | None = None) -> FastAPI:
@@ -52,8 +53,11 @@ def create_app(device: Device, hermes: Hermes | None = None) -> FastAPI:
         return out
 
     @app.get("/search")
-    def search(q: str, limit: int = 10, at: float | None = None, include_superseded: bool = False):
-        return device.search(q, limit, at, include_superseded)
+    def search(q: str, limit: int = 10, at: float | None = None, include_superseded: bool = False,
+               mode: str = "hybrid"):
+        if mode not in MODES:
+            raise HTTPException(400, f"mode must be one of {MODES}")
+        return device.search(q, limit, at, include_superseded, mode)
 
     @app.get("/memories")
     def memories(shard: str | None = None, status: str | None = None, machine: str | None = None):
@@ -84,6 +88,23 @@ def create_app(device: Device, hermes: Hermes | None = None) -> FastAPI:
         if hermes is None:
             raise HTTPException(503, "sync worker not running")
         return hermes.sync_once()
+
+    @app.get("/prove/latency")
+    def prove_latency(n: int = Query(50, ge=1, le=1000)):
+        return device.prove_latency(n)
+
+    @app.post("/admin/crash")
+    def crash():
+        """Demo only (beat b5): push the outbox, then kill this process before recording the
+        ack. Restart it with: python scripts/demo.py start A"""
+        if hermes is None:
+            raise HTTPException(503, "sync worker not running")
+        if device.db.depth() == 0:
+            raise HTTPException(409, "outbox is empty: nothing to crash in the middle of")
+        with hermes.lock:
+            result = hermes.push(crash_before_ack=True)
+        # only reached when the push failed (the process exits on success)
+        raise HTTPException(502, f"push failed, so no crash: {result.get('error')}")
 
     @app.post("/admin/reset")
     def reset(online: bool = True):

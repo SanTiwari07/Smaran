@@ -38,6 +38,8 @@ class Settings:
     dedup_at: float = float(_env("DEDUP_AT", "0.95"))
     sync_interval: float = float(_env("SYNC_INTERVAL", "2.0"))
     sync_batch: int = int(_env("SYNC_BATCH", "20"))
+    # How dense vectors travel on the wire: "f16" (base64 float16, ~8x smaller) or "json" floats.
+    vector_transport: str = _env("VECTOR_TRANSPORT", "f16")
 
     def path(self, rel: str) -> Path:
         p = Path(rel)

@@ -60,7 +60,8 @@ function sync(d: Dev) {
 
 const state = (d: Dev): DeviceState => ({
   device_id: d.id, online: d.online, outbox_depth: d.outbox.length, last_sync: d.lastSync, last_error: null,
-  last_server_seq: server.length, bytes_sent: d.outbox.length * 9000,
+  last_server_seq: server.length, bytes_sent: d.outbox.length * 1900, acked: d.seq - d.outbox.length,
+  recovery: { ts: now() - 600, pending: 0, restored: 0 },
   counts: { krypta: d.mem.filter((m) => m.shard === "krypta").length, hermes: d.mem.filter((m) => m.shard === "hermes").length, agora: d.mem.filter((m) => m.shard === "agora").length },
   contested: d.mem.filter((m) => m.status === "contested").length, classifier: "mock", embedder: "mock",
 });
@@ -115,6 +116,16 @@ export const mockApi: Api = {
     const g: Record<string, Memory[]> = {};
     server.filter((m) => m.status === "contested").forEach((m) => (g[m.entity_key!] ??= []).push(m));
     return ok<ContestedGroup[]>(Object.entries(g).map(([entity_key, versions]) => ({ entity_key, versions })));
+  },
+  proveLatency: () => ok({ ok: true, queries: 50, memories: 3, network: "none", search_p50_ms: 1.1, search_p95_ms: 1.9, total_p50_ms: 3.2 }),
+  proveConflicts: () => ok({ ok: true, cases: 50, themis_correct: 50, naive_correct: 13, ms: 4 }),
+  proveConvergence: () => ok({ ok: true, runs: 100, devices: 5, converged: 100, lost_concurrent_edits: 0, ms: 900 }),
+  proveIdempotency: () => ok({ ok: true, op_id: "FLEET-0019", result: "duplicate", points_before: server.length, points_after: server.length }),
+  proveBenchmarks: () => ok({ skipped: "mock API: no benchmark results" }),
+  gwReset: () => { server.splice(3); server.forEach((m) => Object.assign(m, { status: "current", superseded_by: null, valid_to: null })); return ok({ ok: true }); },
+  devReset: (id) => {
+    devs[id] = { id, online: true, mem: server.map((m) => ({ ...m, shard: "agora" as Shard })), outbox: [], decisions: [], activity: [], seq: 0, lastSync: now() };
+    return ok(state(devs[id]));
   },
   gwResolve: (entity_key, op_id, text) => {
     const vs = server.filter((m) => m.entity_key === entity_key && m.status === "contested");

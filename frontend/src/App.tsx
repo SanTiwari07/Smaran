@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api, DEVICES, USE_MOCK } from "./api/client";
+import AutoPlay, { autoMode } from "./auto/AutoPlay";
 import { Badge } from "./components/ui";
 import { usePoll } from "./hooks/usePoll";
 import ConflictsDecisions from "./views/ConflictsDecisions";
@@ -25,12 +26,19 @@ export default function App() {
 
   useEffect(() => {
     const onHash = () => setTab(readTab());
+    const onDevice = (e: Event) => setDevice((e as CustomEvent<string>).detail);
     window.addEventListener("hashchange", onHash);
-    return () => window.removeEventListener("hashchange", onHash);
+    window.addEventListener("smaran:device", onDevice);   // sent by the auto demo
+    return () => {
+      window.removeEventListener("hashchange", onHash);
+      window.removeEventListener("smaran:device", onDevice);
+    };
   }, []);
+  const auto = autoMode();
 
   return (
     <div className="min-h-screen">
+      {auto !== "off" && <AutoPlay mode={auto} />}
       <header className="border-b border-line bg-panel">
         <div className="mx-auto flex max-w-7xl flex-wrap items-end gap-x-8 gap-y-2 px-4 pt-3">
           <div className="flex items-baseline gap-3 pb-2.5">

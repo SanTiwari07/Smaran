@@ -6,7 +6,7 @@ and document the payload fields in one place.
 import uuid
 from typing import Literal, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 Kind = Literal["status", "observation", "fix", "personal", "manual"]
 Residency = Literal["private", "sync", "drop"]
@@ -55,8 +55,16 @@ class SparseJson(BaseModel):
 
 
 class VectorsJson(BaseModel):
-    dense: list[float]
+    """Either `dense` (JSON floats) or `dense_f16` (base64 float16), see common/vectors.py."""
+    dense: Optional[list[float]] = None
+    dense_f16: Optional[str] = None
     bm25: SparseJson
+
+    @model_validator(mode="after")
+    def _one_dense(self):
+        if (self.dense is None) == (self.dense_f16 is None):
+            raise ValueError("give exactly one of dense or dense_f16")
+        return self
 
 
 class SyncOp(BaseModel):

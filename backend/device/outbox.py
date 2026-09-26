@@ -1,7 +1,12 @@
-"""Device SQLite: the crash-safe outbox, the decision log and small counters.
+"""Device SQLite: the crash-safe outbox, the Krypta journal, the decision log and counters.
 
-WAL mode + one write per statement means a crash never loses an acknowledged write.
-The outbox row is written BEFORE the shard upsert; on restart, pending rows are replayed.
+SQLite (WAL) is the device's durable log; the Qdrant Edge shards are the searchable index.
+Edge keeps recent updates in memory until a flush (measured at 1-2 s on the dev laptop, too
+slow to run per note), so a hard crash can lose the last shard writes. Every write that can't
+be re-fetched from the fleet is therefore logged here first and replayed on start:
+- outbox:         notes that sync (-> Hermes), until the gateway acknowledges them
+- krypta_journal: private notes (-> Krypta); local only, never read by the sync code
+Agora needs no log: after an unclean shutdown the device re-pulls the change feed.
 """
 import json
 import sqlite3
@@ -18,6 +23,7 @@ CREATE TABLE IF NOT EXISTS decisions(
   id INTEGER PRIMARY KEY, ts REAL, op_id TEXT, text TEXT, by TEXT, residency TEXT,
   criticality INT, confidence REAL, reason TEXT);
 CREATE TABLE IF NOT EXISTS meta(k TEXT PRIMARY KEY, v TEXT);
+CREATE TABLE IF NOT EXISTS krypta_journal(op_id TEXT PRIMARY KEY, body TEXT, created REAL);
 """
 
 
@@ -37,7 +43,8 @@ class DeviceDB:
 
     def reset(self) -> None:
         with self.lock:
-            self.conn.executescript("DELETE FROM outbox; DELETE FROM decisions; DELETE FROM meta;")
+            self.conn.executescript(
+                "DELETE FROM outbox; DELETE FROM decisions; DELETE FROM meta; DELETE FROM krypta_journal;")
 
     # ---- meta ------------------------------------------------------------------------
     def get(self, k: str, default=None):
@@ -108,9 +115,24 @@ class DeviceDB:
         row = self.conn.execute("SELECT attempts FROM outbox WHERE op_id=?", (op_id,)).fetchone()
         return row[0] if row else 0
 
+    def acked(self) -> int:
+        with self.lock:
+            return self.conn.execute("SELECT COUNT(*) FROM outbox WHERE state='acked'").fetchone()[0]
+
     def depth(self) -> int:
         with self.lock:
             return self.conn.execute("SELECT COUNT(*) FROM outbox WHERE state='pending'").fetchone()[0]
+
+    # ---- Krypta journal (private notes; nothing in the sync path reads this) ------------
+    def journal_put(self, op_id: str, body: dict) -> None:
+        with self.lock:
+            self.conn.execute("INSERT OR IGNORE INTO krypta_journal(op_id,body,created) VALUES(?,?,?)",
+                              (op_id, json.dumps(body), time.time()))
+
+    def journal_bodies(self) -> list[tuple[str, dict]]:
+        with self.lock:
+            rows = self.conn.execute("SELECT op_id, body FROM krypta_journal").fetchall()
+        return [(r[0], json.loads(r[1])) for r in rows]
 
     # ---- decision log ----------------------------------------------------------------
     def add_decision(self, op_id: str, text: str, d: dict) -> None:

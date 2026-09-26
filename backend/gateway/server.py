@@ -10,6 +10,15 @@ from ..common.schema import point_id
 
 ALL = m.Filter()
 
+# Filtered fields on the server (Qdrant filters inside the HNSW graph, so these matter).
+PAYLOAD_INDEXES = {
+    "entity_key": m.PayloadSchemaType.KEYWORD, "status": m.PayloadSchemaType.KEYWORD,
+    "device_id": m.PayloadSchemaType.KEYWORD, "residency": m.PayloadSchemaType.KEYWORD,
+    "server_seq": m.PayloadSchemaType.INTEGER,
+}
+# Creating a collection on a fresh Docker volume can take > 10 s on Windows.
+SCHEMA_TIMEOUT = 60
+
 
 def eq(key: str, value) -> m.FieldCondition:
     return m.FieldCondition(key=key, match=m.MatchValue(value=value))
@@ -20,7 +29,7 @@ class FleetServer:
                  path: str | None = None, collection: str = settings.qdrant_collection, dim: int = settings.dense_dim):
         self.mode, self.collection, self.dim = mode, collection, dim
         if mode == "server":
-            self.client = QdrantClient(url=url, timeout=10)
+            self.client = QdrantClient(url=url, timeout=SCHEMA_TIMEOUT)
         elif path == ":memory:":
             self.client = QdrantClient(location=":memory:")
         else:
@@ -32,17 +41,23 @@ class FleetServer:
         return f"{self.mode}:{settings.qdrant_url if self.mode == 'server' else 'local'}/{self.collection}"
 
     def ensure(self) -> None:
-        if self.client.collection_exists(self.collection):
-            return
-        self.client.create_collection(
-            self.collection,
-            vectors_config={"dense": m.VectorParams(size=self.dim, distance=m.Distance.COSINE)},
-            sparse_vectors_config={"bm25": m.SparseVectorParams(modifier=m.Modifier.IDF)},
-        )
+        """Create the collection and any missing payload index. Safe to re-run: a first start
+        that timed out halfway (slow Docker volumes on Windows) is completed on the next one."""
+        if not self.client.collection_exists(self.collection):
+            # One shard on the server, so a device mirror maps onto exactly one server shard
+            # (what Qdrant's partial-snapshot sync pattern expects). Local mode has no shards.
+            extra = {"shard_number": 1} if self.mode == "server" else {}
+            self.client.create_collection(
+                self.collection,
+                vectors_config={"dense": m.VectorParams(size=self.dim, distance=m.Distance.COSINE)},
+                sparse_vectors_config={"bm25": m.SparseVectorParams(modifier=m.Modifier.IDF)},
+                timeout=SCHEMA_TIMEOUT, **extra,
+            )
         if self.mode == "server":   # payload indexes (local mode ignores them)
-            for f in ("entity_key", "status", "device_id", "residency"):
-                self.client.create_payload_index(self.collection, f, m.PayloadSchemaType.KEYWORD)
-            self.client.create_payload_index(self.collection, "server_seq", m.PayloadSchemaType.INTEGER)
+            have = self.client.get_collection(self.collection).payload_schema or {}
+            for f, kind in PAYLOAD_INDEXES.items():
+                if f not in have:
+                    self.client.create_payload_index(self.collection, f, kind, wait=True, timeout=SCHEMA_TIMEOUT)
 
     def reset(self) -> None:
         """Delete every point, keep the collection.

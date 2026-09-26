@@ -105,6 +105,62 @@ def test_crash_recovery_replays_outbox(make_device, tmp_path, embedder):
     a.store.delete(HERMES, op_id)                  # simulate: outbox written, shard write lost
     a.recover()
     assert a.store.get(HERMES, op_id) is not None
+    rec = a.state()["recovery"]
+    assert rec["pending"] == 1 and rec["restored"] == 1
+
+
+def test_unclean_shutdown_rebuilds_krypta_and_agora(make_device):
+    """Edge keeps recent writes in memory: a hard crash can lose them. SQLite is the log."""
+    a, h = make_device("A")
+    h.sync_once()
+    fleet = a.store.count(AGORA)
+    assert fleet > 0
+    private = a.add_note(NoteIn(text="Call Ravi on 9876543210 about the night shift swap"))["memory"]["op_id"]
+    # simulate the crash: the unflushed shard writes are gone, SQLite (seq, journal) is not
+    a.store.clear()
+    assert a.db.get("clean_shutdown") is False            # still running, so not a clean stop
+    a.recover()
+    assert a.store.get(KRYPTA, private) is not None       # replayed from the local journal
+    assert a.state()["recovery"]["clean"] is False and a.db.get("last_server_seq") == 0
+    h.sync_once()                                          # re-pulls the change feed
+    assert a.store.count(AGORA) == fleet
+
+
+def test_clean_shutdown_keeps_the_feed_position(make_device, tmp_path, embedder):
+    from backend.common.log import Log
+    from backend.device.classifier import KeywordClassifier
+    from backend.device.core import Device
+    a, h = make_device("A")
+    h.sync_once()
+    seq = a.db.get("last_server_seq")
+    a.close()
+    b = Device("A", a.root, embedder, KeywordClassifier(), log=Log("reopen", tmp_path / "logs"))
+    try:
+        assert b.recovery["clean"] is True and b.db.get("last_server_seq") == seq
+        assert b.store.count(AGORA) > 0
+    finally:
+        b.close()
+
+
+def test_crash_after_gateway_stored_resends_without_duplicates(make_device, gateway):
+    """The worst crash point: the gateway stored the batch, the device never recorded the ack."""
+    a, h = make_device("A")
+    a.set_online(False)
+    ops = [a.add_note(NoteIn(text=t, kind="observation", machine="CNC-12"))["memory"]["op_id"]
+           for t in ("CNC-12 coolant low, topped up", "CNC-12 chips under the conveyor, cleared",
+                     "CNC-12 spindle drive fan cleaned")]
+    before = gateway.stats()["points"]
+    h.push()                                                # gateway stores all three...
+    a.db.conn.execute("UPDATE outbox SET state='pending'")  # ...but the acks are lost (crash)
+    a.recover()                                             # restart
+    assert a.state()["recovery"]["pending"] == 3 and a.db.depth() == 3
+    a.set_online(True)
+    assert h.sync_once()["push"]["results"] == {"duplicate": 3}
+    assert a.db.depth() == 0 and a.state()["acked"] == 3
+    assert gateway.stats()["points"] == before + 3          # stored exactly once
+    stats = {d["device_id"]: d for d in gateway.stats()["devices"]}
+    assert stats["A"]["ops"] == 3 and stats["A"]["duplicates"] == 3
+    assert {m["op_id"] for m in gateway.memories()} >= set(ops)
 
 
 def test_small_shard_does_not_outrank_relevant_hit(make_device):

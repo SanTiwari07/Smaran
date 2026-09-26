@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { Shard, Status } from "../api/types";
+import type { Decision, Shard, Status } from "../api/types";
 
 export function Card({ title, right, children, className = "" }: {
   title?: ReactNode; right?: ReactNode; children: ReactNode; className?: string;
@@ -134,3 +134,21 @@ export function bytes(n: number): string {
 
 export const vvText = (vv: Record<string, number>) =>
   Object.entries(vv).sort().map(([k, v]) => `${k}:${v}`).join(" ");
+
+const BY_LABEL: Record<string, string> = {
+  pii_rule: "PII rule", classifier: "classifier", rule: "rule", dedup: "dedup", seed: "fleet seed", supervisor: "supervisor",
+};
+
+/** "Why here?": which Argus layer placed this memory, how sure it was, and the full reason. */
+export function WhyHere({ decision, shard }: { decision?: Decision; shard?: Shard }) {
+  if (!decision) return null;
+  const by = BY_LABEL[decision.by] ?? decision.by;
+  const conf = decision.by === "classifier" || decision.by === "dedup" ? ` ${decision.confidence.toFixed(2)}` : "";
+  const where = shard ? `${SHARD_META[shard]?.name ?? shard} · ` : "";
+  return (
+    <p className="mt-0.5 text-xs text-muted" title={decision.reason}>
+      <span className="label mr-1 tracking-[0.04em]">Why here</span>
+      {where}{by}{conf}: <span className="text-faint">{decision.reason}</span>
+    </p>
+  );
+}

@@ -1,11 +1,14 @@
+# Pinned to the versions the demo and benchmarks were measured with.
+# qdrant-client must match the qdrant/qdrant image tag in infra/docker-compose.yml.
 qdrant-edge-py==0.8.0
-qdrant-client
-fastembed
-fastapi
-uvicorn
-pydantic
-httpx
-scikit-learn
-pytest
-hypothesis
-python-dotenv
+qdrant-client==1.19.1
+fastembed==0.8.1
+numpy==2.5.3
+fastapi==0.141.1
+uvicorn==0.54.0
+pydantic==2.13.5
+httpx==0.28.1
+scikit-learn==1.9.1
+pytest==9.1.1
+hypothesis==6.168.1
+python-dotenv==1.2.3

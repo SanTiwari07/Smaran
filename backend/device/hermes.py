@@ -5,9 +5,13 @@ Each tick, only while the device is online:
 2. pull: GET /changes?since=<last server_seq> -> ingest into Agora, re-run Themis locally
 3. optimize the shards when the device has been idle for 10 s (Edge has no background optimizer)
 
+No periodic flush(): it held the store lock for seconds on the demo laptop and stalled
+syncs. Crash durability comes from SQLite instead (see outbox.py and Device.recover).
+
 Sending critical ops out of order is safe because Themis is order-independent.
 """
 import json
+import os
 import threading
 import time
 
@@ -55,7 +59,9 @@ class Hermes:
                 self.dev.db.set("last_error", None)
             return {"push": pushed, "pull": pulled}
 
-    def push(self) -> dict:
+    def push(self, crash_before_ack: bool = False) -> dict:
+        """crash_before_ack: demo only. Kill the process right after the gateway stored the
+        batch and before the outbox records the ack: the worst moment for a crash."""
         dev, total = self.dev, {"ok": True, "sent": 0, "results": {}}
         while True:
             due = dev.db.due(settings.sync_batch)
@@ -72,6 +78,9 @@ class Hermes:
                 dev.db.set("last_error", f"push: {e}")
                 dev.log.error("push_failed", error=str(e), count=len(ids))
                 return {**total, "ok": False, "error": str(e)}
+            if crash_before_ack:
+                dev.log.error("simulated_crash", count=len(ids), when="before_ack")
+                os._exit(137)
             dev.db.incr("bytes_sent", len(raw))
             results = r.json()["results"]
             dev.db.ack([x["op_id"] for x in results])

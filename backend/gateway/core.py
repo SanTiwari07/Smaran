@@ -15,6 +15,7 @@ from ..common.config import settings
 from ..common.log import Log
 from ..common.pii import find_pii
 from ..common.schema import SyncBatch, entity_key_for
+from ..common.vectors import pack, unpack
 from ..device.search import cosine
 from .server import FleetServer, eq, m, vectors_json
 
@@ -75,7 +76,7 @@ class Gateway:
                     self._stat(batch.device_id, rejected=1)
                     self.log.error("rejected", op_id=op.op_id, reason=reason)
                 else:
-                    result = self._ingest(op.op_id, op.vectors.model_dump(), op.payload)
+                    result = self._ingest(op.op_id, unpack(op.vectors.model_dump(exclude_none=True)), op.payload)
                     self._stat(batch.device_id, ops=1)
                 self.db.execute("INSERT INTO seen_ops VALUES(?,?,?,?)", (op.op_id, batch.device_id, result, time.time()))
                 results.append({"op_id": op.op_id, "result": result})
@@ -116,7 +117,7 @@ class Gateway:
     def changes(self, since: int, limit: int = 500) -> dict:
         with self.lock:
             recs = self.server.changes(since, limit)
-            pts = [{"payload": r.payload, "vectors": vectors_json(r.vector)} for r in recs]
+            pts = [{"payload": r.payload, "vectors": _wire(r.vector)} for r in recs]
             return {"points": pts, "last_seq": recs[-1].payload["server_seq"] if recs else since}
 
     def search(self, dense: list[float], sparse: dict, limit: int = 10) -> dict:
@@ -218,3 +219,9 @@ class Gateway:
                 self.db.execute("INSERT INTO seen_ops VALUES(?,?,?,?)", (op_id, "fleet", "applied", time.time()))
             self.log("seeded", count=len(items))
             return len(items)
+
+
+def _wire(vector: dict) -> dict:
+    """A stored point's vectors in the configured wire format (float16 by default)."""
+    v = vectors_json(vector)
+    return pack(v["dense"], v["bm25"])

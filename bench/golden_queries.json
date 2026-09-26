@@ -1,0 +1,48 @@
+{
+  "about": "Golden queries for the retrieval-quality benchmark (bench/retrieval.py). Corpus: the 19 fleet manual/status entries in seed/manuals/fleet.json (ids FLEET-0001..FLEET-0019, in file order) plus the 100 hand-written notes in ml/data/handwritten_notes.csv (ids h001..h100). `relevant` lists every corpus id that answers the query; a query is a hit at k if any relevant id is in the top k. First-draft labels: the team should review them, and a second person should label independently.",
+  "queries": [
+    {"id": "p01", "category": "paraphrase", "q": "spindle getting too hot", "relevant": ["h035", "h075", "FLEET-0007"]},
+    {"id": "p02", "category": "paraphrase", "q": "grinding noise when the spindle speeds up", "relevant": ["h001"]},
+    {"id": "p03", "category": "paraphrase", "q": "robot drops parts in the wrong spot", "relevant": ["h006"]},
+    {"id": "p04", "category": "paraphrase", "q": "hydraulic pressure slowly falling on the press", "relevant": ["h015", "FLEET-0013"]},
+    {"id": "p05", "category": "paraphrase", "q": "someone got hurt on the lathe", "relevant": ["h096"]},
+    {"id": "p06", "category": "paraphrase", "q": "safety cover missing from the press", "relevant": ["h011", "FLEET-0014"]},
+    {"id": "p07", "category": "paraphrase", "q": "burnt smell from the electrical panel", "relevant": ["h026"]},
+    {"id": "p08", "category": "paraphrase", "q": "compressed air too low on the robot gripper", "relevant": ["h025", "FLEET-0016"]},
+    {"id": "p09", "category": "paraphrase", "q": "vibration marks on the surface of turned parts", "relevant": ["h020", "FLEET-0011"]},
+    {"id": "p10", "category": "paraphrase", "q": "the tool swapping arm got stuck", "relevant": ["h016", "FLEET-0008"]},
+    {"id": "p11", "category": "paraphrase", "q": "coolant has gone bad and smells", "relevant": ["h008"]},
+    {"id": "p12", "category": "paraphrase", "q": "felt a shock from the robot cabinet", "relevant": ["h066"]},
+    {"id": "p13", "category": "paraphrase", "q": "press emergency button does not lock in", "relevant": ["h037"]},
+    {"id": "p14", "category": "paraphrase", "q": "oil leaking beneath the press cylinder", "relevant": ["h031"]},
+    {"id": "p15", "category": "paraphrase", "q": "worn jaws make the part run off-centre", "relevant": ["h065"]},
+
+    {"id": "i01", "category": "identifier", "q": "alarm 1040", "relevant": ["h021", "h060", "FLEET-0010"]},
+    {"id": "i02", "category": "identifier", "q": "SKF 7014", "relevant": ["FLEET-0006"]},
+    {"id": "i03", "category": "identifier", "q": "part 88-120", "relevant": ["h074"]},
+    {"id": "i04", "category": "identifier", "q": "controller firmware v4.2", "relevant": ["h012"]},
+    {"id": "i05", "category": "identifier", "q": "CNC-12 backlash 0.025 mm", "relevant": ["h051", "FLEET-0009"]},
+    {"id": "i06", "category": "identifier", "q": "LATHE-03 belt", "relevant": ["h002", "h046"]},
+    {"id": "i07", "category": "identifier", "q": "PRESS-02 die", "relevant": ["h045", "h079"]},
+    {"id": "i08", "category": "identifier", "q": "ROBOT-ARM-5 axis 3 encoder", "relevant": ["h032", "h006", "FLEET-0015"]},
+    {"id": "i09", "category": "identifier", "q": "CNC-12 inserts", "relevant": ["h040", "h082"]},
+    {"id": "i10", "category": "identifier", "q": "reference pin procedure", "relevant": ["h032", "FLEET-0015"]},
+
+    {"id": "t01", "category": "typo", "q": "bearng replacment CNC-07", "relevant": ["h047", "FLEET-0006"]},
+    {"id": "t02", "category": "typo", "q": "hydrualic hose burst", "relevant": ["h061"]},
+    {"id": "t03", "category": "typo", "q": "lockot tagout befor opening the guard", "relevant": ["FLEET-0018", "FLEET-0012", "h024"]},
+    {"id": "t04", "category": "typo", "q": "encodr drift", "relevant": ["FLEET-0015", "h032"]},
+    {"id": "t05", "category": "typo", "q": "coolent pump leek", "relevant": ["h054", "h024", "FLEET-0012"]},
+
+    {"id": "m01", "category": "mixed", "q": "what to do when there is smoke", "relevant": ["FLEET-0017", "h003"]},
+    {"id": "m02", "category": "mixed", "q": "CNC-07 vibration above the limit", "relevant": ["h055", "h001", "FLEET-0006"]},
+    {"id": "m03", "category": "mixed", "q": "when is CNC-07 lubrication due", "relevant": ["h042"]},
+    {"id": "m04", "category": "mixed", "q": "gas leak, evacuate", "relevant": ["h080"]},
+    {"id": "m05", "category": "mixed", "q": "press overhaul due by stroke count", "relevant": ["h093"]},
+    {"id": "m06", "category": "mixed", "q": "welding fumes and the extraction fan", "relevant": ["h050"]},
+    {"id": "m07", "category": "mixed", "q": "CNC-12 scrap parts from the vise", "relevant": ["h069"]},
+    {"id": "m08", "category": "mixed", "q": "expired fire extinguisher", "relevant": ["h088"]},
+    {"id": "m09", "category": "mixed", "q": "teach pendant cable damaged", "relevant": ["h083"]},
+    {"id": "m10", "category": "mixed", "q": "CNC-07 spindle seized", "relevant": ["h097"]}
+  ]
+}

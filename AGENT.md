@@ -76,7 +76,7 @@ Use: "vector search engine", "Edge Shard", "mutable / immutable (mirror) shard",
 
 ## 8. Engineering rules
 
-- **Tests stay green.** `python -m pytest` must pass before every commit (30 tests today; the count only goes up).
+- **Tests stay green.** `python -m pytest` must pass before every commit (45 tests today; the count only goes up). CI runs them on Ubuntu and Windows.
 - New behaviour gets a test. Sync, outbox and Themis changes also need `demo.py rehearse --runs 3` passing.
 - Any change to search, sync, the outbox, the router or the UI beats must be followed by `demo.py rehearse --runs 10` before the freeze. Log the Qdrant mode used.
 - Keep `app.py` files thin; logic goes in `core.py` / modules. Shared code lives in `backend/common/` and is imported, never copied.

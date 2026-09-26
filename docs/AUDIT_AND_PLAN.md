@@ -6,6 +6,30 @@ How the audit was done: read all 22 research files; read the README, `docs/`, an
 
 ---
 
+## 0. Implementation status (updated 26 Sep 2026, evening)
+
+Sections 1–4 below are the audit as written this morning. Since then:
+
+| Item | Status | Evidence |
+|---|---|---|
+| WP1 Qdrant Server | ✅ `qdrant/qdrant:v1.19.1` + `qdrant-client==1.19.1` (all Python deps pinned); single-shard collection; payload indexes re-checked on every start (a first start that timed out used to leave 4 of 5 missing) | Rehearsals against `server:http://127.0.0.1:6333` in `logs/rehearsal.log`, summarised in `docs/BENCHMARKS.md` |
+| WP2 CI | ✅ `.github/workflows/ci.yml`: pytest on Ubuntu + Windows, dashboard build | Badge in the README (goes green after the first push) |
+| WP3 README | ✅ promise, architecture diagram, Qdrant-calls table, PS3 checklist, Prove-it commands, credits | ❌ hero GIF and team/LinkedIn links need the team (screen recording, names) |
+| WP4 float16 transport | ✅ 85.7% saved vs sync-everything (selection alone 38.2%, reported separately) | `backend/common/vectors.py`, `test_vectors.py` |
+| WP5 Retrieval eval | ✅ 40 golden queries: hybrid hit@5 0.975, dense 0.95, BM25 0.95 | `bench/retrieval.py`, `bench/golden_queries.json` |
+| WP6 "Why here" | ✅ on every search hit and memory row | `WhyHere` in `frontend/src/components/ui.tsx` |
+| WP7 Kill-and-replay | ✅ beat b5 + `demo.py kill/start` + dashboard counters | 10/10 in server mode |
+| Durability bug found by b5 | ✅ fixed. Qdrant Edge keeps recent writes in memory until a flush (0 of 20 survived a hard kill in a probe; flush costs 1–2 s here). SQLite is now the durable log: outbox (Hermes), a local Krypta journal, Agora re-pulled after an unclean shutdown, Themis re-run on start | `test_unclean_shutdown_rebuilds_krypta_and_agora` |
+| WP8 Kappa | ❌ needs a second person's labels | — |
+| WP9 Docs | ✅ IMPLEMENTATION_PLAN, DEMO (b5 + server tab), `.env.example`, AGENT.md | — |
+| F1 Partial snapshots | ◐ measured against the real server (`bench/partial_snapshot.py`): full restore + partial refresh work and stay consistent (2,020 of 2,020 points), but the partial snapshot was 99–101% of a full one in every configuration tried, so it saved no bandwidth at this size. The live Agora mirror keeps the change feed (it sends only changed points; a restored shard would also replace the device-wide BM25 IDF and Chronos times). Don't claim a bandwidth win for partial snapshots | `docs/BENCHMARKS.md` "Partial-snapshot mirror refresh" |
+| F2 Recency ranking | ❌ not built: the golden set has no time dimension, so there is no way yet to show it helps (AGENT.md §5) | — |
+| F3 Auto demo | ✅ `http://localhost:5173/?auto` (or `?auto=loop`) plays beats 1–4 through the real APIs | `frontend/src/auto/AutoPlay.tsx` |
+| F4 Prove-it panel | ✅ five live checks + the last benchmark scoreboard, on the Devices view | `frontend/src/views/ProveIt.tsx`, `backend/gateway/proofs.py` |
+| F5 On-site readiness | ✅ playbook of rehearsable changes | `docs/ONSITE_PLAYBOOK.md` |
+| F6 Second physical device | ❌ optional; needs the venue network | — |
+| Human tasks H1–H6 | ❌ team | — |
+
 ## 1. Where we stand
 
 ### 1.1 Verdict
