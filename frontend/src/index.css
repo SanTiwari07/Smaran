@@ -5,19 +5,58 @@
   --font-sans: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
   --font-serif: Georgia, "Times New Roman", serif;
   --font-mono: "Cascadia Mono", Consolas, ui-monospace, monospace;
-  --color-ink: #1e1b4b;
-  --color-laurel: #c9a227;
-  --color-laurel-soft: #e8c872;
+}
+
+/* Colour carries meaning only: red for conflicts and failures, green for healthy links,
+   gold for the private shard and the brand. Everything else is ink on paper. */
+@theme inline {
+  --color-paper: var(--paper);
+  --color-panel: var(--panel);
+  --color-line: var(--line);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-gold: var(--gold);
+  --color-alert: var(--alert);
+  --color-ok: var(--ok);
 }
 
 :root {
-  color-scheme: light dark;
+  color-scheme: light;
+  --paper: #f3f2ee;
+  --panel: #fbfaf7;
+  --line: #dcd9d0;
+  --ink: #1d1c19;
+  --muted: #69655c;
+  --faint: #9a968c;
+  --gold: #8a6d0f;
+  --alert: #b3261e;
+  --ok: #2e6b3b;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --paper: #111110;
+    --panel: #171715;
+    --line: #2b2a26;
+    --ink: #e7e4db;
+    --muted: #938e82;
+    --faint: #6a665d;
+    --gold: #d1ae4a;
+    --alert: #e5675c;
+    --ok: #7db487;
+  }
 }
 
 body {
-  @apply bg-stone-50 text-stone-900 antialiased dark:bg-stone-950 dark:text-stone-100;
+  @apply bg-paper text-ink antialiased;
 }
 
 .num {
   font-variant-numeric: tabular-nums;
+}
+
+.label {
+  @apply text-[11px] font-medium uppercase tracking-[0.1em] text-muted;
 }
