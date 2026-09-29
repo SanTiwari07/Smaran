@@ -40,7 +40,7 @@ Built from: [`PROPOSAL.md`](PROPOSAL.md) + [`reference/problem-statements.pdf`](
 | `demo.py` start/stop/reset/play/rehearse | Done | 10/10 automated rehearsals |
 | Bandwidth ≥ 40% | **Done: 85.7%** with float16 vector transport | Selection alone is still 38.2%; BENCHMARKS reports both |
 | Retrieval quality | Done | 40 golden queries: hybrid hit@5 0.975 vs dense 0.95 vs BM25 0.95 |
-| Label agreement (kappa) | **Open** | Needs a second labeller (C or D) |
+| Label agreement (kappa) | **Measured with an AI second labeller (Claude), not a human**: residency 1.000, criticality 0.661 (below the 0.7 target) | `python -m ml.train`, BENCHMARKS "Residency classifier". A human second labeller is still open |
 | Qdrant Server mode (Docker) | **Done**: `qdrant/qdrant:v1.19.1` + `qdrant-client==1.19.1` | 10/10 rehearsals (beats 1–4) and 10/10 (beat 5) against the server, in `logs/rehearsal.log` |
 | Crash durability | Done | Beat 5: crash after the gateway stored a batch → resend → 0 duplicates; Krypta journal + Agora re-pull after an unclean shutdown |
 | CI | Done | GitHub Actions: pytest on Ubuntu and Windows, dashboard build |
@@ -58,7 +58,8 @@ Built from: [`PROPOSAL.md`](PROPOSAL.md) + [`reference/problem-statements.pdf`](
 
 The current work plan is [AUDIT_AND_PLAN.md](AUDIT_AND_PLAN.md). Still open for the team:
 
-- [ ] C or D: label h001–h060 independently in `residency_2` / `criticality_2`, then run `python -m ml.train` for kappa.
+- [x] Second labels for h001–h060 in `residency_2` / `criticality_2` (done by Claude, 29 Sep; kappa 1.000 / 0.661).
+- [ ] Optional: C or D relabels h001–h060 independently, so agreement is between humans. Criticality is under 0.7, so tighten the level 1 vs 2 definition first.
 - [ ] Review `ml/data/handwritten_notes.csv` and `bench/golden_queries.json`; a second person should label the golden queries independently.
 - [ ] Record the backup video using [DEMO.md](DEMO.md).
 

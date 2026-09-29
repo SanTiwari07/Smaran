@@ -279,7 +279,16 @@ def to_markdown(r: dict) -> str:
             for k in ("rules-only", "logreg (alone)", "logreg + rules (shipped)"):
                 s = x[k]
                 L.append(f"| {k} | {s['residency_acc']} | {s['residency_macro_f1']} | {s['criticality_acc']} | {s.get('safety_recall', '')} |")
-            L += ["", f"Label agreement: {x['label_agreement']}", "",
+            la = x["label_agreement"]
+            if isinstance(la, dict):
+                agree = (f"Label agreement (Cohen's kappa, {la['n']} test notes): residency **{la['residency_kappa']}**, "
+                         f"criticality **{la['criticality_kappa']}** (target 0.7). The second labeller was **Claude, an AI "
+                         "model**, not a human: it labelled from the written class definitions without being shown the first "
+                         "labels (apart from the first two rows, seen by accident). Reported as measured; no label was changed "
+                         "to raise it. A human second labeller is still worth adding.")
+            else:
+                agree = f"Label agreement: {la}"
+            L += ["", agree, "",
                   "Caveats: the hand-written set is small (60 test notes), and the criticality combination rule "
                   "was chosen after looking at these results, so treat those numbers as optimistic.", ""]
     if "rehearsals" in r:
