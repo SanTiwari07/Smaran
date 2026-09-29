@@ -198,7 +198,7 @@ For logs and tracing, see [docs/DEBUGGING.md](docs/DEBUGGING.md).
 
 ## Known limitations
 
-- Label agreement (kappa) is not measured yet. A second person needs to label `ml/data/handwritten_notes.csv` (columns `residency_2`, `criticality_2`).
+- Label agreement (kappa) was measured against an AI second labeller (Claude), not a human: residency 1.000, criticality 0.661 (below our 0.7 target; disagreements are all one level apart). A human second labeller has not yet labelled `ml/data/handwritten_notes.csv`. See [BENCHMARKS](docs/BENCHMARKS.md).
 - The classifier test set is small (60 notes), and the rule combining model and keyword criticality was chosen after seeing those results.
 - The 40 golden retrieval queries were written and labelled by the team against a known corpus; treat those numbers as indicative.
 - Convergence is measured for 5 simulated devices; larger fleets are a design claim, not a measurement.

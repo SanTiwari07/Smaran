@@ -78,7 +78,7 @@ Trained on 240 notes, tested on 60 held-out hand-written notes.
 | logreg (alone) | 0.983 | 0.981 | 0.717 | 0.9 |
 | logreg + rules (shipped) | 0.983 | 0.981 | 0.8 | 0.9 |
 
-Label agreement: not measured yet: a second labeller should fill residency_2 / criticality_2 for h001..h060
+Label agreement (Cohen's kappa, 60 test notes): residency **1.000** (60/60 agree), criticality **0.661** (50/60 agree; all 10 disagreements are one level apart). The second labeller was **Claude, an AI model**, not a human: it labelled from the written class definitions, and the first labels were not shown to it, apart from the first two rows, which it saw by accident. The kappa is reported as measured; no label was changed to raise it. The criticality figure is under the 0.7 target, so the safety-critical boundary (level 1 vs 2) is the least reliable label. Computed directly with scikit-learn's `cohen_kappa_score` on `residency` vs `residency_2` and `criticality` vs `criticality_2`. A human second labeller is still worth adding.
 
 Caveats: the hand-written set is small (60 test notes), and the criticality combination rule was chosen after looking at these results, so treat those numbers as optimistic.
 

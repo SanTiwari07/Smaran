@@ -1,64 +1,64 @@
 id,text,kind,machine,residency,criticality,residency_2,criticality_2
-h001,"Heard a grinding sound from CNC-07 when it ramps past 9000 rpm, feels like the bearing again",observation,CNC-07,sync,1,,
-h002,Swapped the worn drive belt on LATHE-03 with the spare from rack B,fix,LATHE-03,sync,0,,
-h003,"There's smoke coming out of the PRESS-02 motor, I hit the e-stop",observation,PRESS-02,sync,2,,
-h004,anyone seen my blue water bottle,observation,,drop,0,,
-h005,Priya said she can swap shifts with me on Thursday,observation,,private,0,,
-h006,ROBOT-ARM-5 keeps missing the pick position by a couple of mm on axis 3,observation,ROBOT-ARM-5,sync,1,,
-h007,CNC-12 back up after the ball screw adjustment,status,CNC-12,sync,0,,
-h008,"Coolant on LATHE-03 smells off, probably bacterial, flushed and refilled",fix,LATHE-03,sync,0,,
-h009,thx,observation,,drop,0,,
-h010,My wife's surgery is on Monday so I need two days off,observation,,private,0,,
-h011,Found the guard on PRESS-02 pulley lying on the floor. Machine locked out till it's refitted,observation,PRESS-02,sync,2,,
-h012,Firmware on the CNC-07 controller updated to v4.2 per vendor bulletin,fix,CNC-07,sync,0,,
-h013,Canteen's biryani is great today,observation,,drop,0,,
-h014,Deepak's number for the night shift handover is 9823456710,observation,,private,0,,
-h015,"Hydraulic pressure on PRESS-02 drifting down to 150 bar over the shift, relief valve suspect",observation,PRESS-02,sync,1,,
-h016,Tool changer on CNC-07 jammed twice this morning. Replaced gripper spring and re-taught positions,fix,CNC-07,sync,1,,
-h017,will do,observation,,drop,0,,
-h018,My appraisal meeting got moved to next week,observation,,private,0,,
-h019,Sparks at the ROBOT-ARM-5 cable carrier when it swings to home. Stopped the cell,observation,ROBOT-ARM-5,sync,2,,
-h020,LATHE-03 chatter marks gone after tightening the tool post,fix,LATHE-03,sync,0,,
-h021,CNC-12 down: spindle drive throws alarm 1040 on every start,status,CNC-12,sync,1,,
-h022,Good night everyone,observation,,drop,0,,
-h023,Please send my PF details to kavya.r@example.com,observation,,private,0,,
-h024,"Replaced the mechanical seal on the LATHE-03 coolant pump, did LOTO first",fix,LATHE-03,sync,1,,
-h025,ROBOT-ARM-5 gripper pressure reading 3.8 bar - regulator was knocked. Set back to 6,fix,ROBOT-ARM-5,sync,0,,
-h026,Burning smell near CNC-07 electrical cabinet. Called electrician,observation,CNC-07,sync,2,,
-h027,lol same,observation,,drop,0,,
-h028,Need to leave at 3 for my daughter's school event,observation,,private,0,,
-h029,PRESS-02 running again after pump replacement,status,PRESS-02,sync,0,,
-h030,Chips piling up under CNC-12 conveyor. Cleared them,fix,CNC-12,sync,0,,
-h031,Oil puddle growing under PRESS-02 near the main cylinder,observation,PRESS-02,sync,2,,
-h032,Axis 3 encoder on ROBOT-ARM-5 recalibrated using the reference pin,fix,ROBOT-ARM-5,sync,0,,
-h033,who's got the key to store room 2,observation,,drop,0,,
-h034,Suresh is on medical leave till Friday,observation,,private,0,,
-h035,CNC-07 spindle temp hit 78 C during the long roughing job,observation,CNC-07,sync,2,,
-h036,LATHE-03 waiting for chuck jaws from the vendor,status,LATHE-03,sync,1,,
-h037,Emergency stop on PRESS-02 is sticky and doesn't latch every time,observation,PRESS-02,sync,2,,
-h038,Morning!,observation,,drop,0,,
-h039,Loan EMI got deducted twice this month,observation,,private,0,,
-h040,CNC-12 surface finish improved after changing to the new inserts,observation,CNC-12,sync,0,,
-h041,ROBOT-ARM-5 stopped - do not use until the safety scanner is fixed,status,ROBOT-ARM-5,sync,2,,
-h042,"Lubrication on CNC-07 done, next due in 250 hours",fix,CNC-07,sync,0,,
-h043,ok boss,observation,,drop,0,,
-h044,Imran's gate pass: aadhaar 4567 8901 2345,observation,,private,0,,
-h045,Noticed a crack in the PRESS-02 die holder,observation,PRESS-02,sync,1,,
-h046,LATHE-03 belt squeals on start-up for the first minute,observation,LATHE-03,sync,0,,
-h047,CNC-07 back in production after bearing replacement,status,CNC-07,sync,0,,
-h048,see you all at the team lunch,observation,,drop,0,,
-h049,I've been feeling dizzy on night shifts,observation,,private,0,,
-h050,Fumes near ROBOT-ARM-5 welding station. Extraction fan not running,observation,ROBOT-ARM-5,sync,2,,
-h051,CNC-12 axis backlash measured 0.025 mm; ran compensation routine,fix,CNC-12,sync,0,,
-h052,"The new operator on PRESS-02 is doing fine, no issues",observation,,drop,0,,
-h053,Call Meena on +91 98450 12345 about the spare parts order,observation,,private,0,,
-h054,LATHE-03 coolant pump leaking at the shaft again,observation,LATHE-03,sync,2,,
-h055,CNC-07 vibration 5.1 mm/s at 10k rpm - above limit,observation,CNC-07,sync,1,,
-h056,Tested the light curtain on PRESS-02 - works fine,observation,PRESS-02,sync,0,,
-h057,Thanks for covering yesterday!,observation,,drop,0,,
-h058,Rent is due tomorrow remind me,observation,,private,0,,
-h059,ROBOT-ARM-5 cycle time up by 2 s after the last program change,observation,ROBOT-ARM-5,sync,0,,
-h060,CNC-12 spindle drive fan was clogged with dust. Cleaned it and alarm cleared,fix,CNC-12,sync,1,,
+h001,"Heard a grinding sound from CNC-07 when it ramps past 9000 rpm, feels like the bearing again",observation,CNC-07,sync,1,sync,1
+h002,Swapped the worn drive belt on LATHE-03 with the spare from rack B,fix,LATHE-03,sync,0,sync,0
+h003,"There's smoke coming out of the PRESS-02 motor, I hit the e-stop",observation,PRESS-02,sync,2,sync,2
+h004,anyone seen my blue water bottle,observation,,drop,0,drop,0
+h005,Priya said she can swap shifts with me on Thursday,observation,,private,0,private,0
+h006,ROBOT-ARM-5 keeps missing the pick position by a couple of mm on axis 3,observation,ROBOT-ARM-5,sync,1,sync,1
+h007,CNC-12 back up after the ball screw adjustment,status,CNC-12,sync,0,sync,0
+h008,"Coolant on LATHE-03 smells off, probably bacterial, flushed and refilled",fix,LATHE-03,sync,0,sync,1
+h009,thx,observation,,drop,0,drop,0
+h010,My wife's surgery is on Monday so I need two days off,observation,,private,0,private,0
+h011,Found the guard on PRESS-02 pulley lying on the floor. Machine locked out till it's refitted,observation,PRESS-02,sync,2,sync,2
+h012,Firmware on the CNC-07 controller updated to v4.2 per vendor bulletin,fix,CNC-07,sync,0,sync,0
+h013,Canteen's biryani is great today,observation,,drop,0,drop,0
+h014,Deepak's number for the night shift handover is 9823456710,observation,,private,0,private,0
+h015,"Hydraulic pressure on PRESS-02 drifting down to 150 bar over the shift, relief valve suspect",observation,PRESS-02,sync,1,sync,1
+h016,Tool changer on CNC-07 jammed twice this morning. Replaced gripper spring and re-taught positions,fix,CNC-07,sync,1,sync,1
+h017,will do,observation,,drop,0,drop,0
+h018,My appraisal meeting got moved to next week,observation,,private,0,private,0
+h019,Sparks at the ROBOT-ARM-5 cable carrier when it swings to home. Stopped the cell,observation,ROBOT-ARM-5,sync,2,sync,2
+h020,LATHE-03 chatter marks gone after tightening the tool post,fix,LATHE-03,sync,0,sync,0
+h021,CNC-12 down: spindle drive throws alarm 1040 on every start,status,CNC-12,sync,1,sync,1
+h022,Good night everyone,observation,,drop,0,drop,0
+h023,Please send my PF details to kavya.r@example.com,observation,,private,0,private,0
+h024,"Replaced the mechanical seal on the LATHE-03 coolant pump, did LOTO first",fix,LATHE-03,sync,1,sync,0
+h025,ROBOT-ARM-5 gripper pressure reading 3.8 bar - regulator was knocked. Set back to 6,fix,ROBOT-ARM-5,sync,0,sync,1
+h026,Burning smell near CNC-07 electrical cabinet. Called electrician,observation,CNC-07,sync,2,sync,2
+h027,lol same,observation,,drop,0,drop,0
+h028,Need to leave at 3 for my daughter's school event,observation,,private,0,private,0
+h029,PRESS-02 running again after pump replacement,status,PRESS-02,sync,0,sync,0
+h030,Chips piling up under CNC-12 conveyor. Cleared them,fix,CNC-12,sync,0,sync,0
+h031,Oil puddle growing under PRESS-02 near the main cylinder,observation,PRESS-02,sync,2,sync,1
+h032,Axis 3 encoder on ROBOT-ARM-5 recalibrated using the reference pin,fix,ROBOT-ARM-5,sync,0,sync,0
+h033,who's got the key to store room 2,observation,,drop,0,drop,0
+h034,Suresh is on medical leave till Friday,observation,,private,0,private,0
+h035,CNC-07 spindle temp hit 78 C during the long roughing job,observation,CNC-07,sync,2,sync,1
+h036,LATHE-03 waiting for chuck jaws from the vendor,status,LATHE-03,sync,1,sync,0
+h037,Emergency stop on PRESS-02 is sticky and doesn't latch every time,observation,PRESS-02,sync,2,sync,2
+h038,Morning!,observation,,drop,0,drop,0
+h039,Loan EMI got deducted twice this month,observation,,private,0,private,0
+h040,CNC-12 surface finish improved after changing to the new inserts,observation,CNC-12,sync,0,sync,0
+h041,ROBOT-ARM-5 stopped - do not use until the safety scanner is fixed,status,ROBOT-ARM-5,sync,2,sync,2
+h042,"Lubrication on CNC-07 done, next due in 250 hours",fix,CNC-07,sync,0,sync,0
+h043,ok boss,observation,,drop,0,drop,0
+h044,Imran's gate pass: aadhaar 4567 8901 2345,observation,,private,0,private,0
+h045,Noticed a crack in the PRESS-02 die holder,observation,PRESS-02,sync,1,sync,2
+h046,LATHE-03 belt squeals on start-up for the first minute,observation,LATHE-03,sync,0,sync,0
+h047,CNC-07 back in production after bearing replacement,status,CNC-07,sync,0,sync,0
+h048,see you all at the team lunch,observation,,drop,0,drop,0
+h049,I've been feeling dizzy on night shifts,observation,,private,0,private,0
+h050,Fumes near ROBOT-ARM-5 welding station. Extraction fan not running,observation,ROBOT-ARM-5,sync,2,sync,2
+h051,CNC-12 axis backlash measured 0.025 mm; ran compensation routine,fix,CNC-12,sync,0,sync,0
+h052,"The new operator on PRESS-02 is doing fine, no issues",observation,,drop,0,drop,0
+h053,Call Meena on +91 98450 12345 about the spare parts order,observation,,private,0,private,0
+h054,LATHE-03 coolant pump leaking at the shaft again,observation,LATHE-03,sync,2,sync,1
+h055,CNC-07 vibration 5.1 mm/s at 10k rpm - above limit,observation,CNC-07,sync,1,sync,2
+h056,Tested the light curtain on PRESS-02 - works fine,observation,PRESS-02,sync,0,sync,0
+h057,Thanks for covering yesterday!,observation,,drop,0,drop,0
+h058,Rent is due tomorrow remind me,observation,,private,0,private,0
+h059,ROBOT-ARM-5 cycle time up by 2 s after the last program change,observation,ROBOT-ARM-5,sync,0,sync,0
+h060,CNC-12 spindle drive fan was clogged with dust. Cleaned it and alarm cleared,fix,CNC-12,sync,1,sync,0
 h061,PRESS-02 hydraulic hose bulging near the fitting - replaced before it burst,fix,PRESS-02,sync,2,,
 h062,My bike got a flat in the parking lot,observation,,drop,0,,
 h063,Anjali's phone is 7012345678 if you need the calibration certs,observation,,private,0,,
