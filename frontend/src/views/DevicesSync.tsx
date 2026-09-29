@@ -2,7 +2,7 @@ import { useState } from "react";
 import { api, DEVICES } from "../api/client";
 import type { ActivityItem } from "../api/types";
 import {
-  ago, bytes, Button, Card, clock, CritBadge, Empty, ErrorNote, Indicator, SHARD_META, Stat, StatRow,
+  Astronaut, ago, bytes, Button, Card, clock, CritBadge, Empty, ErrorNote, Group, Indicator, SHARD_META, Stat, StatRow,
 } from "../components/ui";
 import { usePoll } from "../hooks/usePoll";
 import ProveIt from "./ProveIt";
@@ -26,12 +26,17 @@ function DeviceCard({ id }: { id: string }) {
 
   return (
     <Card
-      title={`Device ${id}`}
+      title={
+        <span className="flex items-center gap-3">
+          <Astronaut online={s?.online ?? true} size={30} stripe={id === "A" ? "#f5993c" : "#8ea2ff"} />
+          <span>Device {id}</span>
+        </span>
+      }
       right={s && (
         <div className="flex items-center gap-3">
-          <Indicator tone={s.online ? "ok" : "alert"}>{s.online ? "Online" : "Offline"}</Indicator>
+          <Indicator tone={s.online ? "ok" : "alert"}>{s.online ? "Comms online" : "Comms lost"}</Indicator>
           <button type="button" disabled={busy} onClick={() => run(() => api.setOnline(id, !s.online))}
-            className="text-xs text-muted underline decoration-line underline-offset-4 hover:text-ink disabled:opacity-40">
+            className="whitespace-nowrap text-xs text-muted underline decoration-line underline-offset-4 hover:text-ink disabled:opacity-40">
             {s.online ? "Cut link" : "Restore link"}
           </button>
         </div>
@@ -41,30 +46,36 @@ function DeviceCard({ id }: { id: string }) {
         <ErrorNote error={`Device ${id} unreachable at ${DEVICES[id]} (${st.error}). Is it running? python scripts/demo.py status`} />
       ) : !s ? <Empty>Loading…</Empty> : (
         <div className="space-y-5">
-          <StatRow cols={3}>
-            {(["krypta", "hermes", "agora"] as const).map((k) => (
-              <Stat key={k} label={SHARD_META[k].name} value={s.counts[k]} hint={SHARD_META[k].hint} />
-            ))}
-          </StatRow>
-          <StatRow cols={4}>
-            <Stat label="Outbox" value={s.outbox_depth} hint="Memories waiting to sync" />
-            <Stat label="Conflicts" value={s.contested} tone={s.contested ? "alert" : undefined} />
-            <Stat label="Last sync" value={<span className="text-base">{ago(s.last_sync)}</span>} />
-            <Stat label="Sent" value={<span className="text-base">{bytes(s.bytes_sent)}</span>} hint="Bytes pushed to the gateway" />
-          </StatRow>
-          <StatRow cols={4}>
-            <Stat label="Acked" value={s.acked} hint="Ops the gateway confirmed and the outbox marked done" />
-            <Stat label="Resent after restart" value={s.recovery?.pending ?? 0}
-              hint="Unacknowledged ops found in the outbox when this process last started" />
-            <Stat label="Duplicates ignored" value={dupes} hint="Resends the gateway recognised by op id and did not store again" />
-            <Stat label="Process started" value={<span className="text-base">{ago(s.recovery?.ts)}</span>} />
-          </StatRow>
+          <Group title="Memory shards">
+            <StatRow cols={3}>
+              {(["krypta", "hermes", "agora"] as const).map((k) => (
+                <Stat key={k} label={`${SHARD_META[k].name} · ${{ krypta: "private", hermes: "outgoing", agora: "fleet" }[k]}`}
+                  value={s.counts[k]} hint={SHARD_META[k].hint} />
+              ))}
+            </StatRow>
+          </Group>
+          <Group title="Sync link">
+            <StatRow cols={4}>
+              <Stat label="Outbox" value={s.outbox_depth} hint="Memories waiting to sync" />
+              <Stat label="Conflicts" value={s.contested} tone={s.contested ? "alert" : undefined} />
+              <Stat label="Last sync" value={<span className="text-base">{ago(s.last_sync)}</span>} />
+              <Stat label="Sent" value={<span className="text-base">{bytes(s.bytes_sent)}</span>} hint="Bytes pushed to the gateway" />
+            </StatRow>
+          </Group>
+          <Group title="Crash recovery">
+            <StatRow cols={4}>
+              <Stat label="Acked" value={s.acked} hint="Ops the gateway confirmed and the outbox marked done" />
+              <Stat label="Resent" value={s.recovery?.pending ?? 0}
+                hint="Unacknowledged ops found in the outbox when this process last started" />
+              <Stat label="Duplicates" value={dupes} hint="Resends the gateway recognised by op id and did not store again" />
+              <Stat label="Up since" value={<span className="text-base">{ago(s.recovery?.ts)}</span>} />
+            </StatRow>
+          </Group>
           {st.error && <ErrorNote error={`Lost contact: ${st.error}`} />}
           {s.last_error && s.online && <ErrorNote error={`Sync error: ${s.last_error}`} />}
           <ErrorNote error={err} />
-          <div className="border-t border-line pt-3">
-            <div className="mb-2 flex items-center justify-between gap-2">
-              <h3 className="label">Outbox, most critical first</h3>
+          <Group title="Outbox, most critical first">
+            <div className="mb-2 flex justify-end">
               <Button variant="secondary" disabled={busy || !s.online} onClick={() => run(() => api.syncNow(id))}
                 title={s.online ? "Push and pull now" : "Device is offline"}>
                 {busy ? "Syncing…" : "Sync now"}
@@ -82,7 +93,7 @@ function DeviceCard({ id }: { id: string }) {
                 {ob.data.length > 6 && <li className="py-1.5 text-xs text-muted">and {ob.data.length - 6} more</li>}
               </ul>
             ) : <p className="text-sm text-muted">Empty. Everything is synced.</p>}
-          </div>
+          </Group>
           <p className="font-mono text-[11px] text-faint">classifier {s.classifier} / embedder {s.embedder}</p>
         </div>
       )}
@@ -96,7 +107,7 @@ function GatewayCard() {
   const s = stats.data;
   const a = audit.data;
   return (
-    <Card title="Gateway / Qdrant Server" right={s && <span className="truncate font-mono text-xs text-faint">{s.server}</span>}>
+    <Card title="Base station · Qdrant Server" right={s && <span className="truncate font-mono text-xs text-faint">{s.server}</span>}>
       {stats.error && !s ? <ErrorNote error={`Gateway unreachable (${stats.error})`} /> : !s ? <Empty>Loading…</Empty> : (
         <div className="space-y-5">
           <StatRow cols={3}>
@@ -153,7 +164,7 @@ function ActivityFeed() {
   const a = usePoll(() => Promise.all(Object.keys(DEVICES).map((d) => api.activity(d).catch(() => []))), []);
   const items = (a.data ?? []).flat().sort((x, y) => y.ts - x.ts).slice(0, 60);
   return (
-    <Card title="Fleet activity">
+    <Card title="Mission log">
       {items.length === 0 ? <Empty>No activity yet.</Empty> : (
         <ul className="max-h-[560px] overflow-y-auto font-mono text-xs">
           {items.map((it, i) => (
@@ -170,8 +181,39 @@ function ActivityFeed() {
   );
 }
 
+function MissionBanner() {
+  const gw = usePoll(() => api.gwStats(), [], 2000);
+  const ids = Object.keys(DEVICES);
+  const states = usePoll(() => Promise.all(ids.map((d) => api.state(d).catch(() => null))), [], 2000);
+  const online = (states.data ?? []).filter((x) => x?.online).length;
+  return (
+    <section className="relative mb-4 overflow-hidden rounded-xl border border-line">
+      <img src="/hero.webp" alt="" className="absolute inset-0 h-full w-full object-cover object-[50%_72%]" />
+      <div className="absolute inset-0 bg-gradient-to-r from-paper via-paper/70 to-transparent" />
+      <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-paper/80 to-transparent" />
+      <div className="relative flex min-h-[210px] flex-col justify-center gap-3 px-6 py-6 sm:min-h-[240px] sm:px-9">
+        <span className="font-mono text-[11px] uppercase tracking-[0.16em]" style={{ color: "var(--brand-glow)" }}>Mission control · CNC-07 fleet</span>
+        <h1 className="max-w-md text-3xl font-semibold leading-tight sm:text-4xl">Every crew member remembers. Nobody lies.</h1>
+        <div className="flex flex-wrap gap-2 pt-1">
+          <span className="rounded-full border border-line bg-paper/70 px-3 py-1 text-xs backdrop-blur">
+            <span className="num font-mono text-ink">{online}/{ids.length}</span> crew on comms
+          </span>
+          <span className="rounded-full border border-line bg-paper/70 px-3 py-1 text-xs backdrop-blur">
+            <span className="num font-mono text-ink">{gw.data?.points ?? "–"}</span> fleet memories
+          </span>
+          <span className={`rounded-full border bg-paper/70 px-3 py-1 text-xs backdrop-blur ${gw.data?.contested ? "border-alert/50 text-alert" : "border-line"}`}>
+            <span className="num font-mono">{gw.data?.contested ?? 0}</span> contested
+          </span>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export default function DevicesSync() {
   return (
+    <>
+    <MissionBanner />
     <div className="grid gap-4 lg:grid-cols-3">
       <div className="space-y-4 lg:col-span-2">
         <div className="grid gap-4 md:grid-cols-2">
@@ -182,5 +224,6 @@ export default function DevicesSync() {
       </div>
       <ActivityFeed />
     </div>
+    </>
   );
 }

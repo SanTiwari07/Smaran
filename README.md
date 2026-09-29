@@ -53,6 +53,10 @@ flowchart LR
 | Edge → server | Outbox → gateway → `qdrant-client` upsert into a single-shard collection with payload indexes | `backend/gateway/server.py` |
 | Server-side search | Prefetch dense + BM25 (IDF modifier), `FusionQuery(RRF)` for cloud escalation | `server.py` |
 
+## The story
+
+`story/` is a scroll-driven walkthrough of the prototype and how it uses Qdrant (static files, no build step; deploy anywhere, or run `python -m http.server 5180 --directory story`). It has live demos of the Argus PII rules and the Themis version-vector comparison.
+
 ## Results
 
 All numbers are measured. Methodology and raw output are in [docs/BENCHMARKS.md](docs/BENCHMARKS.md).

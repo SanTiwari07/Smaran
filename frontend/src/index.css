@@ -1,14 +1,15 @@
 @import "tailwindcss";
 
-/* System fonts only: the dashboard must look the same with Wi-Fi off. */
+/* Look and feel follow qdrant.tech: deep navy canvas, gradient cards with hairline borders, crimson
+   gradient primary buttons, Mona Sans + Geist Mono. Dark only. The fonts are progressive: if they
+   can't load (Wi-Fi off) the system stack below keeps the layout intact. */
 @theme {
-  --font-sans: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
-  --font-serif: Georgia, "Times New Roman", serif;
-  --font-mono: "Cascadia Mono", Consolas, ui-monospace, monospace;
+  --font-sans: "Mona Sans", "Helvetica Neue", "Segoe UI", system-ui, Arial, sans-serif;
+  --font-mono: "Geist Mono", "Cascadia Mono", Consolas, ui-monospace, monospace;
 }
 
-/* Colour carries meaning only: red for conflicts and failures, green for healthy links,
-   gold for the private shard and the brand. Everything else is ink on paper. */
+/* Colour carries meaning: crimson (brand) = primary action, coral = conflict or failure,
+   green = healthy link, periwinkle = the private shard. */
 @theme inline {
   --color-paper: var(--paper);
   --color-panel: var(--panel);
@@ -16,41 +17,52 @@
   --color-ink: var(--ink);
   --color-muted: var(--muted);
   --color-faint: var(--faint);
-  --color-gold: var(--gold);
+  --color-gold: var(--accent);
   --color-alert: var(--alert);
   --color-ok: var(--ok);
 }
 
 :root {
-  color-scheme: light;
-  --paper: #f3f2ee;
-  --panel: #fbfaf7;
-  --line: #dcd9d0;
-  --ink: #1d1c19;
-  --muted: #69655c;
-  --faint: #9a968c;
-  --gold: #8a6d0f;
-  --alert: #b3261e;
-  --ok: #2e6b3b;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    color-scheme: dark;
-    --paper: #111110;
-    --panel: #171715;
-    --line: #2b2a26;
-    --ink: #e7e4db;
-    --muted: #938e82;
-    --faint: #6a665d;
-    --gold: #d1ae4a;
-    --alert: #e5675c;
-    --ok: #7db487;
-  }
+  color-scheme: dark;
+  --paper: #090e1a;
+  --panel: #111828;
+  --line: #28324d;
+  --ink: #f0f3fa;
+  --muted: #8b95b0;
+  --faint: #5d6886;
+  --accent: #8ea2ff;
+  --alert: #ff6b81;
+  --ok: #4fd1a1;
+  --brand: #dc244c;
+  --brand-2: #be003a;
+  --brand-glow: #ff516b;
 }
 
 body {
   @apply bg-paper text-ink antialiased;
+  font-weight: 350;
+  /* a field of stars over the navy canvas */
+  background-image:
+    radial-gradient(1px 1px at 12% 18%, rgba(240,243,250,.55), transparent),
+    radial-gradient(1px 1px at 27% 62%, rgba(240,243,250,.35), transparent),
+    radial-gradient(1.5px 1.5px at 44% 9%, rgba(240,243,250,.6), transparent),
+    radial-gradient(1px 1px at 58% 41%, rgba(240,243,250,.3), transparent),
+    radial-gradient(1px 1px at 73% 23%, rgba(240,243,250,.5), transparent),
+    radial-gradient(1.5px 1.5px at 86% 71%, rgba(240,243,250,.4), transparent),
+    radial-gradient(1px 1px at 93% 12%, rgba(240,243,250,.55), transparent),
+    radial-gradient(60rem 26rem at 50% -8rem, rgba(47, 91, 255, 0.16), transparent 70%);
+  background-size: 420px 420px, 380px 380px, 520px 520px, 340px 340px, 460px 460px, 400px 400px, 300px 300px, auto;
+  background-attachment: fixed;
+}
+
+/* the Mars horizon: the same art as the story, fixed to the bottom of the screen */
+body::before {
+  content: "";
+  position: fixed; inset: auto 0 0 0; height: 62vh; z-index: -1; pointer-events: none;
+  background: url("/hero.webp") center bottom / cover no-repeat;
+  opacity: .5;
+  -webkit-mask-image: linear-gradient(to top, #000 25%, transparent 100%);
+  mask-image: linear-gradient(to top, #000 25%, transparent 100%);
 }
 
 .num {
@@ -58,5 +70,49 @@ body {
 }
 
 .label {
-  @apply text-[11px] font-medium uppercase tracking-[0.1em] text-muted;
+  @apply text-[11px] font-semibold uppercase tracking-[0.1em] text-muted;
 }
+
+/* qdrant.tech cards: vertical navy gradient, 0.8px border, 8px radius */
+.q-card {
+  background: linear-gradient(rgba(22, 30, 51, 0.95) 0%, rgba(14, 20, 36, 0.95) 100%);
+  border: 0.8px solid #3d4866;
+  border-radius: 8px;
+}
+
+.btn-primary {
+  background: linear-gradient(var(--brand), var(--brand-2));
+  box-shadow: inset 0 2px 1px 0 var(--brand-glow);
+  color: #fff;
+  border-radius: 8px;
+}
+.btn-primary:hover:not(:disabled) { filter: brightness(1.12); }
+
+.btn-outline {
+  box-shadow: 0 0 0 1px #717c99;
+  color: #fff;
+  border-radius: 8px;
+}
+.btn-outline:hover:not(:disabled) { box-shadow: 0 0 0 1px #b6bfd8; }
+
+::selection { background: rgba(220, 36, 76, 0.45); }
+
+/* HUD corner ticks: a small crimson bracket on the top-left and bottom-right of every panel */
+.hud { position: relative; }
+.hud::before, .hud::after {
+  content: ""; position: absolute; width: 14px; height: 14px; pointer-events: none;
+  border: 2px solid var(--brand);
+}
+.hud::before { top: -1px; left: -1px; border-right: 0; border-bottom: 0; border-top-left-radius: 8px; }
+.hud::after { bottom: -1px; right: -1px; border-left: 0; border-top: 0; border-bottom-right-radius: 8px; }
+
+.tile {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.025);
+  padding: 10px 12px;
+  min-width: 0;
+}
+.pix { image-rendering: pixelated; shape-rendering: crispEdges; }
+
+.tile .label { letter-spacing: 0.03em; overflow-wrap: anywhere; font-size: 10.5px; }

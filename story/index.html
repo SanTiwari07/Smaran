@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Smaran · Built on Qdrant Edge</title>
+<meta name="description" content="A scroll-through of Smaran: offline-first edge memory on Qdrant Edge and Qdrant Server, and how it keeps that memory correct and private when devices disagree.">
+<link rel="icon" href="assets/logo.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Mona+Sans:wght@350;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <a class="logo" href="#top"><img class="logo-mark" src="assets/logo.svg" alt="">Smaran</a>
+  <div class="nav-links">
+    <a href="#problem">Problem</a><a href="#shards">Shards</a><a href="#search">Search</a><a href="#argus">Argus</a>
+    <a href="#hermes">Hermes</a><a href="#themis">Themis</a><a href="#server">Qdrant Server</a><a href="#proof">Proof</a>
+  </div>
+  <span class="spacer"></span>
+  <a class="btn primary sm open-dash" href="/">Open the prototype</a>
+  <div class="progress" id="progress"></div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="hero-art" aria-hidden="true"></div>
+  <div class="hero-copy">
+    <h1>Memory that <em>doesn't lie.</em></h1>
+    <p class="lede">Offline-first edge memory on Qdrant.</p>
+    <div class="cta">
+      <a class="btn primary" href="#problem">Scroll the story</a>
+      <a class="btn ghost open-dash" href="/">Open the prototype</a>
+    </div>
+  </div>
+</header>
+<div class="hero-stats">
+    <div><b>3.0 ms</b><span>offline search, p50</span></div>
+    <div><b>50 / 50</b><span>conflicts caught</span></div>
+    <div><b>85.7%</b><span>bandwidth saved</span></div>
+    <div><b>0</b><span>private records on the server</span></div>
+  </div>
+
+<!-- ======================= 01 PROBLEM ======================= -->
+<section class="chapter" id="problem" style="--gx:15%; --gc:rgba(255,107,129,.13)">
+  <div class="chap-head">
+    <span class="eyebrow">01 · The problem</span>
+    <h2>Two technicians. One machine. No Wi-Fi.</h2>
+    <p>Qdrant's own sync guide is a great start: local shard, queue, upload. But it uses wall-clock timestamps to decide what wins. On a factory floor, that is how a safety warning disappears.</p>
+  </div>
+  <div class="scrolly" data-chapter="problem">
+    <div class="steps">
+      <div class="step"><span class="n">STEP 1</span><h3>The link drops mid-shift</h3><p>Ravi and Meera both carry a tablet running the same edge memory. The factory Wi-Fi goes down. <b>Nothing breaks</b>: search and writes keep working locally, which is exactly what Qdrant Edge is for.</p></div>
+      <div class="step"><span class="n">STEP 2</span><h3>They write opposite things</h3><p>Ravi notes that CNC-07 runs fine after a belt swap. A little later, Meera notes the spindle is vibrating and the machine should <b>not</b> run. Meera's tablet clock happens to be 9 minutes slow, as real device clocks are.</p></div>
+      <div class="step"><span class="n">STEP 3</span><h3>The link returns. A timestamp decides.</h3><p>A timestamp-based sync compares <span class="mono">10:02</span> with <span class="mono">09:54</span> and keeps the "newer" one. That is the reference pattern in Qdrant's sync guide, and most sync databases.</p></div>
+      <div class="step"><span class="n">STEP 4</span><h3>The warning is silently gone</h3><p>The naive merge keeps "runs fine" and drops the real warning. No error, no log line. <b>Smaran flags both</b>, lets the shift supervisor decide, and keeps the history of what each device believed.</p><span class="tag">50 scripted cases with ±10 min clock skew</span><span class="tag">naive 13/50 · Themis 50/50</span></div>
+    </div>
+    <div class="stage-wrap"><div class="stage card" id="stage-problem">
+      <div class="card-h"><span>Factory floor · CNC-07</span><span class="pill" id="p-link">link up</span></div>
+      <div class="card-b col">
+        <div class="cols2">
+          <div class="col"><div class="row" style="justify-content:space-between"><b>Device A · Ravi</b><span class="pill ok" data-from="1" id="p-a">online</span></div>
+            <div class="note hide" data-from="2" id="n-a">CNC-07 runs fine after the belt swap.<small>clock 10:02 · written 2nd-last</small></div></div>
+          <div class="col"><div class="row" style="justify-content:space-between"><b>Device B · Meera</b><span class="pill ok" data-from="1" id="p-b">online</span></div>
+            <div class="note hide" data-from="2" id="n-b">CNC-07 spindle vibrating. Do NOT run.<small>clock 09:54 (9 min slow) · actually newer</small></div></div>
+        </div>
+        <div class="link-bar" id="linkbar"><span>A</span><div class="line"></div><span id="link-t">link up</span><div class="line"></div><span>B</span></div>
+        <div class="cols2">
+          <div class="card hide" data-from="3" style="padding:12px"><div class="label hint">NAIVE MERGE · LAST WRITER WINS</div>
+            <div class="note win" style="margin-top:8px">CNC-07 runs fine after the belt swap.<small>kept: 10:02 &gt; 09:54</small></div>
+            <div class="note hide lost" data-from="4" style="margin-top:8px">Spindle vibrating. Do NOT run.<small>dropped, no warning</small></div></div>
+          <div class="card hide" data-from="4" style="padding:12px;border-color:rgba(255,81,107,.6)"><div class="label hint" style="color:var(--glow)">SMARAN · THEMIS</div>
+            <div class="note contest" style="margin-top:8px">CNC-07 runs fine after the belt swap.<small>status: contested</small></div>
+            <div class="note contest" style="margin-top:8px">Spindle vibrating. Do NOT run.<small>status: contested · supervisor decides</small></div></div>
+        </div>
+      </div>
+    </div></div>
+  </div>
+</section>
+
+<!-- ======================= 02 SHARDS ======================= -->
+<section class="chapter" id="shards" style="--gx:85%; --gc:rgba(47,91,255,.16)">
+  <div class="chap-head">
+    <span class="eyebrow">02 · Qdrant Edge</span>
+    <h2>Three shards on every device, three different promises.</h2>
+    <p>Qdrant Edge is an embedded, in-process vector store. Smaran opens three <code class="mono">EdgeShard</code>s per device and gives each one a job. Where a memory lives <i>is</i> its privacy policy.</p>
+  </div>
+  <div class="scrolly" data-chapter="shards">
+    <div class="steps">
+      <div class="step"><span class="n">SHARD 1</span><h3>Krypta keeps what's private</h3><p>Personal notes, phone numbers, IDs. This shard has <b>no sync code path at all</b>, so there is nothing to misconfigure: its contents cannot leave the device.</p><span class="tag">no outbox entry</span><span class="tag">never uploaded</span></div>
+      <div class="step"><span class="n">SHARD 2</span><h3>Hermes holds what's waiting to travel</h3><p>New technician notes land here, and every write is also queued in a crash-safe outbox. When the link returns, Hermes carries them to the gateway.</p><span class="tag">mutable</span><span class="tag">status transitions via set_payload</span></div>
+      <div class="step"><span class="n">SHARD 3</span><h3>Agora mirrors what the fleet knows</h3><p>A local copy of Qdrant Server's collection: fleet manuals and every other device's synced notes. It is why a device can answer a question about a machine it has never touched, with the network off.</p><span class="tag">fed by a change feed</span></div>
+      <div class="step"><span class="n">ONE PROCESS</span><h3>No server needed to search</h3><p>Each shard has a dense vector and a sparse BM25 vector, payload indexes on <span class="mono">status</span>, <span class="mono">entity_key</span>, <span class="mono">machine</span> and more. Because Edge has no background optimizer, Hermes runs <span class="mono">optimize()</span> on an idle timer.</p></div>
+    </div>
+    <div class="stage-wrap"><div class="stage card" id="stage-shards">
+      <div class="card-h"><span>Device A · one process</span><span class="pill ok"><span class="dot"></span>works offline</span></div>
+      <div class="card-b col">
+        <div class="shard" data-shard="1"><h4><span class="lock" style="color:var(--accent)"></span>Krypta <span class="pill blue">private</span></h4><p>EdgeShard · no sync path · notes with PII rules matched</p></div>
+        <div class="shard" data-shard="2"><h4>Hermes <span class="pill amber">mutable</span></h4><p>EdgeShard · local writes + SQLite outbox</p></div>
+        <div class="shard" data-shard="3"><h4>Agora <span class="pill">mirror</span></h4><p>EdgeShard · fleet knowledge from Qdrant Server</p></div>
+        <pre class="code" id="shard-code"></pre>
+      </div>
+    </div></div>
+  </div>
+</section>
+
+<!-- ======================= 03 SEARCH ======================= -->
+<section class="chapter" id="search" style="--gx:20%; --gc:rgba(142,162,255,.14)">
+  <div class="chap-head">
+    <span class="eyebrow">03 · Hybrid search, offline</span>
+    <h2>Meaning and exact words, in about 3 milliseconds.</h2>
+    <p>A technician types "CNC-07 bearing noise". A dense vector finds notes that mean the same thing. BM25 finds the exact part number. Smaran fuses both.</p>
+  </div>
+  <div class="scrolly" data-chapter="search">
+    <div class="steps">
+      <div class="step"><span class="n">STEP 1</span><h3>Embed on the device</h3><p>The query is embedded locally by <b>bge-small</b> (384 dimensions) and tokenised by Qdrant Edge's built-in <span class="mono">Bm25</span> encoder. Its token ids match Qdrant Server's BM25, so the server can score device-made sparse vectors without re-indexing.</p></div>
+      <div class="step"><span class="n">STEP 2</span><h3>Two ranked lists, across all three shards</h3><p>One global dense list (cosine is comparable across shards) and one global BM25 list. Dense wins on paraphrase; BM25 wins on identifiers like <span class="mono">LATHE-03</span>.</p></div>
+      <div class="step"><span class="n">STEP 3</span><h3>Fuse with RRF</h3><p>Reciprocal Rank Fusion rewards a memory that ranks well in <i>either</i> list. Both agree on the bearing note, so it rises to first.</p><p>We first tried native fusion per shard, then merging shard lists. It let a one-note Krypta outrank the real answer, because every shard's #1 counted the same. Fusing two <b>global</b> lists fixed it.</p></div>
+      <div class="step"><span class="n">STEP 4</span><h3>Measured, not claimed</h3><p>1,000 offline queries over 2,000 memories: <b>3.04 ms p50, 3.98 ms p95</b>. Including query embedding: 8.3 ms p50. On 40 golden queries hybrid reaches hit@5 <b>0.975</b> vs 0.95 for dense-only or BM25-only.</p><span class="tag">device-wide IDF</span><span class="tag">RRF</span></div>
+    </div>
+    <div class="stage-wrap"><div class="stage card" id="stage-search">
+      <div class="card-h"><span>Query</span><span class="pill" id="s-lat">offline</span></div>
+      <div class="card-b col">
+        <div class="note mono" style="font-size:14px">▸ CNC-07 bearing noise</div>
+        <div class="cols2 hide" data-from="2">
+          <div><div class="hint" style="margin-bottom:6px">DENSE · meaning</div>
+            <div class="rank"><div class="r hi"><i>1</i>Grinding from CNC-07 above 9000 rpm, bearing again<em>0.81</em></div><div class="r"><i>2</i>CNC-12 vibration after inserts changed<em>0.62</em></div><div class="r"><i>3</i>Manual: bearing replacement, CNC series<em>0.60</em></div></div></div>
+          <div><div class="hint" style="margin-bottom:6px">BM25 · exact words</div>
+            <div class="rank"><div class="r"><i>1</i>Manual: bearing replacement, CNC series<em>7.4</em></div><div class="r hi"><i>2</i>Grinding from CNC-07 above 9000 rpm, bearing again<em>6.9</em></div><div class="r"><i>3</i>CNC-07 firmware v4.2 per vendor bulletin<em>3.1</em></div></div></div>
+        </div>
+        <div class="hide" data-from="3"><div class="hint" style="margin-bottom:6px">RRF · fused result</div>
+          <div class="rank"><div class="r hi"><i>1</i>Grinding from CNC-07 above 9000 rpm, bearing again<em>1 + 2 → best</em></div><div class="r"><i>2</i>Manual: bearing replacement, CNC series<em>3 + 1</em></div><div class="r"><i>3</i>CNC-12 vibration after inserts changed<em>2 + –</em></div></div></div>
+        <div class="hide" data-from="4"><div class="bar"><div class="top"><span>search only, p50</span><b>3.04 ms</b></div><div class="meter"><span id="m1" style="width:0"></span></div></div>
+          <div class="bar" style="margin-top:10px"><div class="top"><span>target</span><b>&lt; 20 ms</b></div><div class="meter"><span style="width:100%;background:#4a5573"></span></div></div></div>
+        <div class="hint">Illustrative results. Scores are examples; the latency figures are from docs/BENCHMARKS.md.</div>
+      </div>
+    </div></div>
+  </div>
+</section>
+
+<!-- ======================= 04 ARGUS ======================= -->
+<section class="chapter" id="argus" style="--gx:80%; --gc:rgba(79,209,161,.10)">
+  <div class="chap-head">
+    <span class="eyebrow">04 · Argus · what stays local, what syncs</span>
+    <h2>Rules first. A model second. Every decision explains itself.</h2>
+    <p>Problem Statement 3 asks the device to <i>dynamically</i> decide what stays local and what syncs. Argus does it in three layers, in a fixed order, and stores the reason next to every memory.</p>
+  </div>
+  <div class="scrolly" data-chapter="argus">
+    <div class="steps">
+      <div class="step"><span class="n">LAYER 1</span><h3>PII rules always win</h3><p>Phone numbers, emails, Aadhaar and PAN patterns force a note into <b>Krypta</b>, with confidence 1.0. <b>No model can override this.</b> The gateway runs the same rules again as defence in depth. Try it on the right.</p></div>
+      <div class="step"><span class="n">LAYER 2</span><h3>A learned classifier proposes</h3><p>A logistic-regression model on bge-small embeddings says private, sync or drop, plus a criticality level. Safety keywords can raise criticality. When the model is unsure, the note <b>stays local</b>. Status updates are never dropped.</p><span class="tag">98.3% on 60 held-out notes</span><span class="tag">safety recall 0.9</span></div>
+      <div class="step"><span class="n">LAYER 3</span><h3>Dedup against fleet knowledge</h3><p>If a note is a near-duplicate of something already in Agora (cosine ≥ 0.95), it's dropped instead of syncing. That is where much of the bandwidth saving comes from.</p></div>
+    </div>
+    <div class="stage-wrap"><div class="stage card" id="stage-argus">
+      <div class="card-h"><span>Try a note</span><span class="pill blue">live PII rules from backend/common/pii.py</span></div>
+      <div class="card-b col">
+        <input class="argus-in" id="argus-in" value="Call Meena on +91 98450 12345 about the spare parts order" aria-label="Type a note">
+        <div class="chips" id="chips"></div>
+        <div class="layers" id="layers"></div>
+        <div class="dest" id="dest"><div data-d="private">Krypta<br><small>stays on device</small></div><div data-d="sync">Hermes → server<br><small>syncs</small></div><div data-d="drop">Dropped<br><small>not stored</small></div></div>
+        <div class="hint" id="argus-note">Layer 1 is the real rule set. Layers 2 and 3 are simulated here with keywords; the shipped ones are a trained classifier and a Qdrant query.</div>
+      </div>
+    </div></div>
+  </div>
+</section>
+
+<!-- ======================= 05 HERMES ======================= -->
+<section class="chapter" id="hermes" style="--gx:15%; --gc:rgba(245,185,92,.10)">
+  <div class="chap-head">
+    <span class="eyebrow">05 · Hermes · the outbox</span>
+    <h2>Safety-critical first. Crash-safe. Never twice.</h2>
+    <p>Links are weak and devices die. Hermes is a SQLite-backed outbox, so a hard kill loses nothing that was acknowledged, and the gateway ignores anything it has seen.</p>
+  </div>
+  <div class="scrolly" data-chapter="hermes">
+    <div class="steps">
+      <div class="step"><span class="n">STEP 1</span><h3>Offline writes queue up</h3><p>Five notes are written with the link down. Each one gets an <span class="mono">op_id</span>, is stored in Hermes, and joins the outbox with a criticality.</p></div>
+      <div class="step"><span class="n">STEP 2</span><h3>The link returns: critical goes first</h3><p>On a weak connection, order matters. The <b>safety-critical</b> note is sent before the routine ones, so the warning about the smoking press reaches the fleet first.</p></div>
+      <div class="step"><span class="n">STEP 3</span><h3>Kill it mid-drain</h3><p>The gateway stored a batch, but the device died before it heard the acknowledgement. Qdrant Edge keeps recent writes in memory until a flush, so a hard kill can lose them. <b>SQLite is the durable log</b>: outbox, a local Krypta journal, and Agora is re-pulled after an unclean shutdown.</p></div>
+      <div class="step"><span class="n">STEP 4</span><h3>Resend. Zero duplicates.</h3><p>Point ids are <span class="mono">uuid5(op_id)</span>, and the gateway skips any op it has seen. The unacknowledged batch is sent again, and the server ends up with each memory exactly once. In the rehearsal, 3 of 3 ops were resent and <b>0</b> duplicate memories appeared.</p><span class="tag">10 / 10 rehearsals</span><span class="tag">real Qdrant Server v1.19.1</span></div>
+    </div>
+    <div class="stage-wrap"><div class="stage card" id="stage-hermes">
+      <div class="card-h"><span>Outbox · Device A</span><span class="pill" id="h-link">link down</span></div>
+      <div class="card-b col">
+        <div class="q" id="h-q"></div>
+        <div class="gw"><div class="cnt" id="h-srv">0<small>on Qdrant Server</small></div><div class="cnt" id="h-dup" style="text-align:right">0<small>duplicates</small></div></div>
+        <div class="hint" id="h-note">5 notes queued.</div>
+      </div>
+    </div></div>
+  </div>
+</section>
+
+<!-- ======================= 06 THEMIS ======================= -->
+<section class="chapter" id="themis" style="--gx:85%; --gc:rgba(255,107,129,.12)">
+  <div class="chap-head">
+    <span class="eyebrow">06 · Themis · deciding what's true</span>
+    <h2>Version vectors tell <i>newer</i> from <i>concurrent</i>.</h2>
+    <p>A clock can lie; a version vector cannot. It counts how many writes from each device a version has seen. That is enough to know whether one report supersedes another, or whether they were written independently and must both be kept.</p>
+  </div>
+  <div class="scrolly" data-chapter="themis">
+    <div class="steps">
+      <div class="step"><span class="n">CASE 1</span><h3>An update: one dominates</h3><p>Meera wrote after <b>seeing</b> Ravi's report, so her vector is ≥ his in every position. Hers is newer. His is <b>superseded</b>, kept in history but hidden from search.</p></div>
+      <div class="step"><span class="n">CASE 2</span><h3>A conflict: neither dominates</h3><p>Each device wrote while the other was offline. Ravi has seen 1 write from A and none from B; Meera the reverse. Neither is ≥ the other, so they are <b>concurrent</b>. Themis marks <b>both contested</b>. It never guesses.</p></div>
+      <div class="step"><span class="n">CASE 3</span><h3>The supervisor decides</h3><p>A new version is written by someone who has seen both, so its vector dominates both. The conflict resolves cleanly and the history stays.</p></div>
+      <div class="step"><span class="n">THE GUARANTEE</span><h3>Order can't change the answer</h3><p>Themis computes statuses from the <b>set</b> of versions, so delivery order and duplicates don't matter. Over 1,000 random runs with 5 devices, random offline edits and duplicate sends, all replicas ended identical, and <b>0</b> concurrent edits were lost.</p><span class="tag">1000 / 1000 converged</span><span class="tag">same rules on device and gateway</span></div>
+    </div>
+    <div class="stage-wrap"><div class="stage card" id="stage-themis">
+      <div class="card-h"><span>Machine CNC-07 · status</span><span class="pill" id="t-badge">–</span></div>
+      <div class="card-b col">
+        <div class="ver" id="v1"><div class="who"><span id="v1-who">Ravi · Device A</span><span class="mono" id="v1-vv">{A:1}</span></div><div class="txt" id="v1-t">CNC-07 runs fine.</div></div>
+        <div class="ver" id="v2"><div class="who"><span id="v2-who">Meera · Device B</span><span class="mono" id="v2-vv">{A:1, B:1}</span></div><div class="txt" id="v2-t">Spindle vibrating. Do not run.</div></div>
+        <div class="ver hide" id="v3"><div class="who"><span>Supervisor · gateway</span><span class="mono" id="v3-vv">{A:1, B:1, G:1}</span></div><div class="txt">Bearing replaced, safe to run.</div></div>
+        <div class="verdict" id="t-verdict"></div>
+        <div class="hint">compare(a, b) from backend/common/themis.py, re-implemented here in ten lines.</div>
+      </div>
+    </div></div>
+  </div>
+</section>
+
+<!-- ======================= 07 SERVER ======================= -->
+<section class="chapter" id="server" style="--gx:20%; --gc:rgba(47,91,255,.16)">
+  <div class="chap-head">
+    <span class="eyebrow">07 · Edge to Qdrant Server</span>
+    <h2>A real server, a real change feed, a lot fewer bytes.</h2>
+    <p>The gateway is a thin service in front of Qdrant Server. It resolves conflicts, writes points with <span class="mono">qdrant-client</span>, and hands every device a feed of what changed.</p>
+  </div>
+  <div class="scrolly" data-chapter="server">
+    <div class="steps">
+      <div class="step"><span class="n">UP</span><h3>Idempotent batches to one collection</h3><p>Device outboxes post batches to the gateway. Each op becomes a point in a single-shard collection with a named dense vector, a sparse <span class="mono">bm25</span> vector with the <b>IDF modifier</b>, and payload indexes on <span class="mono">status</span> and <span class="mono">entity_key</span>.</p></div>
+      <div class="step"><span class="n">DOWN</span><h3>A change feed keeps Agora fresh</h3><p>Devices pull <span class="mono">/changes?since=…</span>, which sends only changed points, and upsert them into Agora. Statuses are re-resolved locally so every replica agrees with the server.</p></div>
+      <div class="step"><span class="n">ESCALATE</span><h3>Ask the cloud when local isn't enough</h3><p>If the best local dense score is under a threshold, the device asks Qdrant Server: a <b>Prefetch</b> on dense and BM25, fused with <span class="mono">FusionQuery(RRF)</span>. The result says whether it was answered locally or escalated.</p></div>
+      <div class="step"><span class="n">BYTES</span><h3>Selection plus float16</h3><p>Not syncing private and duplicate notes saved 38.2%, which alone <b>missed our 40% target</b>. Sending dense vectors as base64 float16 instead of JSON floats takes the total to <b>85.7%</b>, with a round-trip error under 1e-3.</p><span class="tag">500-note script</span><span class="tag">309 ops sent · 107 kept private</span></div>
+    </div>
+    <div class="stage-wrap"><div class="stage card" id="stage-server">
+      <div class="card-h"><span>Data path</span><span class="pill blue">Qdrant Server v1.19.1</span></div>
+      <div class="card-b col">
+        <div class="flow">
+          <div class="node" id="fn1"><b>Device</b><small>Hermes outbox</small></div><div class="arrow" id="fa1">→</div>
+          <div class="node" id="fn2"><b>Gateway</b><small>Themis · audit</small></div><div class="arrow" id="fa2">→</div>
+          <div class="node" id="fn3"><b>Qdrant Server</b><small>dense + BM25</small></div>
+        </div>
+        <div class="flow" style="grid-template-columns:1fr auto 1fr auto 1fr">
+          <div class="node" id="fn4"><b>Agora</b><small>mirror shard</small></div><div class="arrow" id="fa3">←</div>
+          <div class="node" id="fn5"><b>Change feed</b><small>/changes?since</small></div><div class="arrow" id="fa4">←</div>
+          <div class="node" id="fn6"><b>Server_seq</b><small>ordering</small></div>
+        </div>
+        <pre class="code" id="srv-code"></pre>
+        <div class="bars hide" data-from="4">
+          <div class="bar"><div class="top"><span>Baseline: every note, JSON floats</span><b>4,180,440 B</b></div><div class="track"><span class="base" data-w="100"></span></div></div>
+          <div class="bar"><div class="top"><span>Selection only</span><b>2,583,512 B · −38.2%</b></div><div class="track"><span class="mid" data-w="61.8"></span></div></div>
+          <div class="bar"><div class="top"><span>Selection + float16 (shipped)</span><b>595,744 B · −85.7%</b></div><div class="track"><span class="best" data-w="14.3"></span></div></div>
+        </div>
+      </div>
+    </div></div>
+  </div>
+</section>
+
+<!-- ======================= 08 PROOF ======================= -->
+<section class="chapter" id="proof" style="--gx:50%; --gc:rgba(79,209,161,.10)">
+  <div class="chap-head">
+    <span class="eyebrow">08 · Proof</span>
+    <h2>Every claim, measured. Every caveat, stated.</h2>
+    <p>Numbers come from <span class="mono">docs/BENCHMARKS.md</span>, generated by <span class="mono">python -m bench.bench</span>. The dashboard's "Prove it" panel re-runs the live checks.</p>
+  </div>
+  <div class="wide">
+    <div class="metrics">
+      <div class="card metric"><div class="big">3.0<small>ms p50</small></div><h4>Offline hybrid search</h4><p>1,000 queries, 2,000 memories, 3 shards, CPU only. 3.98 ms at p95.</p><span class="src">docs/BENCHMARKS.md · Offline search latency</span></div>
+      <div class="card metric"><div class="big">0.975<small>hit@5</small></div><h4>Hybrid retrieval quality</h4><p>Dense-only 0.95, BM25-only 0.95. On identifier queries hybrid scored 1.0 against 0.9 for dense-only; hit@1 is 0.875 (BM25-only: 0.70).</p><span class="src">40 golden queries · team-written</span></div>
+      <div class="card metric"><div class="big">50<small>/ 50</small></div><h4>Conflicts handled correctly</h4><p>Naive last-writer-wins got 13. It can never flag a concurrent edit, so 25 of 25 concurrent cases were lost.</p><span class="src">clock skew ±10 min per device</span></div>
+      <div class="card metric"><div class="big">1000<small>/ 1000</small></div><h4>Replicas converged</h4><p>5 devices + gateway, random offline edits, random delivery order, duplicate sends. 0 concurrent edits lost.</p><span class="src">bench/simulate.py + Hypothesis tests</span></div>
+      <div class="card metric"><div class="big">0<small>records</small></div><h4>Private data on the server</h4><p>Privacy audit after the demo: 0 private records and 0 PII matches across the fleet collection.</p><span class="src">gateway audit · re-run in "Prove it"</span></div>
+      <div class="card metric"><div class="big">10<small>/ 10</small></div><h4>Demo rehearsals, twice</h4><p>Beats 1–4, and the crash beat, each 10 out of 10 on the real Qdrant Server v1.19.1. 0 duplicate memories after the crash.</p><span class="src">logs/rehearsal.log</span></div>
+    </div>
+    <div class="honest">
+      <div class="card"><h4><span class="pill amber">Read this</span>What these numbers are not</h4><ul>
+        <li>Data is <b>synthetic or team-written</b>: 2,000 generated memories, 40 golden queries, 60 hand-written test notes. Treat them as indicative, not as a general benchmark.</li>
+        <li>The conflict benchmark uses cases built to break last-writer-wins. It shows Themis is correct, not that real fleets conflict at this rate.</li>
+        <li>Devices are processes on one machine; "offline" is a software link switch.</li></ul></div>
+      <div class="card"><h4><span class="pill bad">Misses, reported</span>What fell short</h4><ul>
+        <li>Selection alone saved <b>38.2%</b> of bandwidth, under the 40% target. Float16 transport did the rest.</li>
+        <li>Label agreement (Cohen's κ): residency 1.00, criticality <b>0.66</b>, below our 0.7 target. The second labeller was <b>Claude, an AI model</b>, not a human.</li>
+        <li>Partial-snapshot refresh of Agora worked but saved <b>no bandwidth</b> at this size, so we don't claim it.</li></ul></div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= 09 QDRANT MAP ======================= -->
+<section class="chapter" id="map" style="--gx:30%; --gc:rgba(142,162,255,.12)">
+  <div class="chap-head">
+    <span class="eyebrow">09 · Qdrant, doing the work</span>
+    <h2>Where each Qdrant feature earns its place.</h2>
+  </div>
+  <div class="wide card" style="overflow:hidden">
+    <table class="map">
+      <thead><tr><th>Step</th><th>Qdrant feature</th><th>Where</th></tr></thead>
+      <tbody>
+        <tr><td>On-device store</td><td><code>qdrant-edge-py</code> <code>EdgeShard.create / load</code>, three shards, named <code>dense</code> + sparse <code>bm25</code> vectors</td><td><code>backend/device/store.py</code></td></tr>
+        <tr><td>Keyword vectors</td><td>Edge built-in <code>Bm25</code>; token ids match Qdrant Server's BM25</td><td><code>backend/device/embed.py</code></td></tr>
+        <tr><td>Hybrid query</td><td><code>QueryRequest</code> nearest-neighbour per vector, fused with RRF; device-wide IDF</td><td><code>backend/device/search.py</code></td></tr>
+        <tr><td>Filters</td><td><code>Filter</code> / <code>FieldCondition</code> / <code>MatchValue</code> on keyword and integer payload indexes</td><td><code>store.py</code></td></tr>
+        <tr><td>Maintenance</td><td><code>optimize()</code> on an idle timer (Edge has no background optimizer)</td><td><code>backend/device/hermes.py</code></td></tr>
+        <tr><td>Mutations</td><td><code>UpdateOperation.upsert_points</code>, <code>set_payload</code> for status transitions</td><td><code>store.py</code></td></tr>
+        <tr><td>Edge → server</td><td>Outbox → gateway → <code>qdrant-client</code> upsert into a single-shard collection with payload indexes</td><td><code>backend/gateway/server.py</code></td></tr>
+        <tr><td>Server-side search</td><td><code>Prefetch</code> dense + BM25 (IDF modifier), <code>FusionQuery(RRF)</code> for cloud escalation</td><td><code>server.py</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div style="height:clamp(56px,9vh,110px)"></div>
+</section>
+
+<!-- ======================= 10 TRY ======================= -->
+<section class="cta-band" id="try">
+  <span class="eyebrow">10 · The prototype</span>
+  <h2>Now break it yourself.</h2>
+  <p style="color:var(--muted);max-width:56ch;margin:16px auto 0">The Olympus dashboard drives two real device processes, the gateway and Qdrant Server. Cut the link, write conflicting notes, and watch Themis flag them.</p>
+  <div class="cmds"><pre class="code" style="font-size:13.5px">docker compose -f infra/docker-compose.yml up -d
+python scripts/demo.py start-all
+python scripts/demo.py play            <span class="c"># the scripted beats</span>
+cd frontend &amp;&amp; npm run dev             <span class="c"># http://localhost:5173  (?auto plays the demo)</span></pre></div>
+  <div class="cta" style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:32px">
+    <a class="btn primary open-dash" href="/">Open the prototype</a>
+    <a class="btn ghost" href="https://github.com/SanTiwari07/Smaran">View the code</a>
+  </div>
+</section>
+<footer><span>Smaran · Code Cubicle 6.0 · Problem Statement 3 · Built on Qdrant Edge + Qdrant Server</span><span>An independent hackathon project; not affiliated with Qdrant.</span></footer>
+
+<script src="app.js"></script>
+</body>
+</html>

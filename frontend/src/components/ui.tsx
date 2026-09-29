@@ -5,9 +5,9 @@ export function Card({ title, right, children, className = "" }: {
   title?: ReactNode; right?: ReactNode; children: ReactNode; className?: string;
 }) {
   return (
-    <section className={`border border-line bg-panel ${className}`}>
+    <section className={`q-card hud ${className}`}>
       {title && (
-        <header className="flex items-center justify-between gap-3 border-b border-line px-4 py-2.5">
+        <header className="flex items-center justify-between gap-3 border-b border-line px-4 py-3">
           <h2 className="label min-w-0 truncate text-ink">{title}</h2>
           {right}
         </header>
@@ -18,17 +18,17 @@ export function Card({ title, right, children, className = "" }: {
 }
 
 const TONES = {
-  neutral: "text-muted border-line",
-  alert: "text-alert border-alert/40",
-  ok: "text-ok border-ok/40",
-  gold: "text-gold border-gold/40",
+  neutral: "text-muted border-line bg-white/[0.03]",
+  alert: "text-alert border-alert/40 bg-alert/10",
+  ok: "text-ok border-ok/40 bg-ok/10",
+  gold: "text-gold border-gold/40 bg-gold/10",
 } as const;
 export type Tone = keyof typeof TONES;
 
 export function Badge({ tone = "neutral", children, title }: { tone?: Tone; children: ReactNode; title?: string }) {
   return (
     <span title={title}
-      className={`inline-flex shrink-0 items-center gap-1 border px-1.5 py-px text-[11px] font-medium uppercase leading-4 tracking-wide ${TONES[tone]}`}>
+      className={`inline-flex shrink-0 items-center gap-1 rounded border px-1.5 py-px text-[11px] font-semibold uppercase leading-4 tracking-wide ${TONES[tone]}`}>
       {children}
     </span>
   );
@@ -38,7 +38,7 @@ export function Badge({ tone = "neutral", children, title }: { tone?: Tone; chil
 export function Indicator({ tone, children }: { tone: Tone; children: ReactNode }) {
   const dot = { neutral: "bg-faint", alert: "bg-alert", ok: "bg-ok", gold: "bg-gold" }[tone];
   return (
-    <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${TONES[tone].split(" ")[0]}`}>
+    <span className={`inline-flex items-center gap-1.5 whitespace-nowrap text-xs font-medium ${TONES[tone].split(" ")[0]}`}>
       <span className={`h-1.5 w-1.5 rounded-full ${dot}`} />{children}
     </span>
   );
@@ -71,12 +71,12 @@ export function Button({ children, onClick, variant = "primary", disabled, type 
   disabled?: boolean; type?: "button" | "submit"; title?: string;
 }) {
   const v = {
-    primary: "border-ink bg-ink text-paper hover:opacity-85",
-    secondary: "border-line bg-panel text-ink hover:border-muted",
+    primary: "btn-primary",
+    secondary: "btn-outline",
   }[variant];
   return (
     <button type={type} title={title} disabled={disabled} onClick={onClick}
-      className={`inline-flex shrink-0 items-center justify-center gap-1.5 border px-3 py-1.5 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-40 ${v}`}>
+      className={`inline-flex shrink-0 items-center justify-center gap-1.5 px-3.5 py-1.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-40 ${v}`}>
       {children}
     </button>
   );
@@ -84,21 +84,64 @@ export function Button({ children, onClick, variant = "primary", disabled, type 
 
 export function Stat({ label, value, hint, tone }: { label: string; value: ReactNode; hint?: string; tone?: "alert" }) {
   return (
-    <div title={hint} className="min-w-0">
-      <div className={`num text-2xl leading-tight ${tone === "alert" ? "text-alert" : ""}`}>{value}</div>
-      <div className="label mt-0.5 truncate tracking-[0.04em]">{label}</div>
+    <div title={hint} className="tile">
+      <div className={`num font-mono text-2xl font-medium leading-tight ${tone === "alert" ? "text-alert" : ""}`}>{value}</div>
+      <div className="label mt-1 tracking-[0.04em]">{label}</div>
     </div>
   );
 }
 
-/** A row of stats separated by hairlines. */
+/** A row of telemetry tiles. */
 export function StatRow({ children, cols }: { children: ReactNode; cols: 2 | 3 | 4 }) {
-  // four stats wrap to two rows on phones, so the third starts a row and loses its divider there
-  const c = {
-    2: "grid-cols-2", 3: "grid-cols-3",
-    4: "grid-cols-2 sm:grid-cols-4 [&>*:nth-child(3)]:border-l-0 [&>*:nth-child(3)]:pl-0 sm:[&>*:nth-child(3)]:border-l sm:[&>*:nth-child(3)]:pl-3",
-  }[cols];
-  return <div className={`grid ${c} gap-y-3 [&>*]:border-line [&>*]:px-3 [&>*:not(:first-child)]:border-l [&>*:first-child]:pl-0`}>{children}</div>;
+  const c = { 2: "grid-cols-2", 3: "grid-cols-3", 4: "grid-cols-2 sm:grid-cols-4" }[cols];
+  return <div className={`grid ${c} gap-2`}>{children}</div>;
+}
+
+/** A small labelled group inside a panel ("Sync", "Recovery"). */
+export function Group({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <div>
+      <div className="mb-2 flex items-center gap-2">
+        <span className="h-1.5 w-1.5 rotate-45" style={{ background: "var(--brand)" }} />
+        <h3 className="label text-ink">{title}</h3>
+        <span className="h-px flex-1 bg-line" />
+      </div>
+      {children}
+    </div>
+  );
+}
+
+const PIX: Record<string, string> = { h: "#e3e9ff", s: "#98a8dc", v: "#0e1530", r: "#dc244c", o: "#f5993c", g: "#4fd1a1", c: "#5d6886" };
+const SUIT = [
+  "....hhhhhh....",
+  "..hhhhhhhhhh..",
+  ".hhhvvvvvvhhs.",
+  ".hhvvrrvvvvhs.",
+  ".hhvvrvvvvvhs.",
+  ".hhvvvvvvvvhs.",
+  ".hhhvvvvvvhhs.",
+  "..hhhhhhhhhs..",
+  ".hhhhhhhhhhss.",
+  "hhhhhccchhhhss",
+  "hhhhhcgchhhhss",
+  "hhhhhhhhhhhhss",
+  ".hhhhhhhhhhss.",
+  "..hhhh..hhhs..",
+  "..hhhh..hhhs..",
+  "..ooo...ooo...",
+];
+/** A pixel-art astronaut: one per device. `stripe` recolours the boots and chest light. */
+export function Astronaut({ online = true, size = 44, stripe }: { online?: boolean; size?: number; stripe?: string }) {
+  const light = online ? PIX.g : PIX.r;
+  return (
+    <svg viewBox="0 0 14 16" width={size} height={(size * 16) / 14} className="pix shrink-0" aria-hidden="true">
+      {SUIT.flatMap((row, y) => [...row].map((ch, x) => {
+        if (ch === ".") return null;
+        const fill = ch === "g" ? light : ch === "o" ? (stripe ?? PIX.o) : PIX[ch];
+        return <rect key={`${x}-${y}`} x={x} y={y} width="1.02" height="1.02" fill={fill} />;
+      }))}
+    </svg>
+  );
 }
 
 export function Empty({ children }: { children: ReactNode }) {
@@ -111,7 +154,7 @@ export function ErrorNote({ error }: { error: string | null }) {
 }
 
 export const inputCls =
-  "w-full border border-line bg-paper px-3 py-1.5 text-sm text-ink outline-none placeholder:text-faint focus:border-ink";
+  "w-full rounded-lg border border-line bg-paper/70 px-3 py-2 text-sm text-ink outline-none placeholder:text-faint focus:border-brand focus:ring-1 focus:ring-brand/60";
 
 export function ago(ts: number | null | undefined): string {
   if (!ts) return "never";

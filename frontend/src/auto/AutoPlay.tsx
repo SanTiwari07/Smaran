@@ -124,11 +124,11 @@ export default function AutoPlay({ mode }: { mode: "once" | "loop" }) {
 
   if (stopped) return null;
   return (
-    <div role="status" aria-live="polite" className="sticky top-0 z-10 border-b border-line bg-ink text-paper">
+    <div role="status" aria-live="polite" className="sticky top-0 z-10 border-b border-line bg-[#161e33] text-ink">
       <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-2">
-        <span className="label shrink-0 text-paper/70">{where?.beat ?? "Auto demo"}</span>
+        <span className="label shrink-0 text-muted">{where?.beat ?? "Auto demo"}</span>
         <span className="min-w-0 flex-1 text-sm">{err ? `Stopped: ${err}` : where?.say ?? "Starting…"}</span>
-        {where && <span className="num shrink-0 font-mono text-xs text-paper/70">{where.i}/{where.total}</span>}
+        {where && <span className="num shrink-0 font-mono text-xs text-muted">{where.i}/{where.total}</span>}
         <button type="button" onClick={() => { stop.current = true; setStopped(true); }}
           className="shrink-0 text-xs underline underline-offset-4">Stop</button>
       </div>

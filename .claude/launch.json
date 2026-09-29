@@ -4,8 +4,28 @@
     {
       "name": "frontend-mock",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev:mock", "--prefix", "frontend", "--", "--port", "5173"],
+      "runtimeArgs": [
+        "run",
+        "dev:mock",
+        "--prefix",
+        "frontend",
+        "--",
+        "--port",
+        "5173"
+      ],
       "port": 5173
+    },
+    {
+      "name": "story",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "5180",
+        "--directory",
+        "story"
+      ],
+      "port": 5180
     }
   ]
 }
