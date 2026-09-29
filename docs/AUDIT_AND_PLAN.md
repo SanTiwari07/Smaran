@@ -20,7 +20,7 @@ Sections 1–4 below are the audit as written this morning. Since then:
 | WP6 "Why here" | ✅ on every search hit and memory row | `WhyHere` in `frontend/src/components/ui.tsx` |
 | WP7 Kill-and-replay | ✅ beat b5 + `demo.py kill/start` + dashboard counters | 10/10 in server mode |
 | Durability bug found by b5 | ✅ fixed. Qdrant Edge keeps recent writes in memory until a flush (0 of 20 survived a hard kill in a probe; flush costs 1–2 s here). SQLite is now the durable log: outbox (Hermes), a local Krypta journal, Agora re-pulled after an unclean shutdown, Themis re-run on start | `test_unclean_shutdown_rebuilds_krypta_and_agora` |
-| WP8 Kappa | ◐ measured against an AI second labeller (Claude), 29 Sep: residency κ 1.000, criticality κ 0.661 (< 0.7 target). Not a human; a human relabel is still open | `ml/data/handwritten_notes.csv`, `python -m ml.train`, BENCHMARKS |
+| WP8 Kappa | ◐ measured against an AI second labeller, 29 Sep: residency κ 1.000, criticality κ 0.661 (< 0.7 target). Not a human; a human relabel is still open | `ml/data/handwritten_notes.csv`, `python -m ml.train`, BENCHMARKS |
 | WP9 Docs | ✅ IMPLEMENTATION_PLAN, DEMO (b5 + server tab), `.env.example`, AGENT.md | — |
 | F1 Partial snapshots | ◐ measured against the real server (`bench/partial_snapshot.py`): full restore + partial refresh work and stay consistent (2,020 of 2,020 points), but the partial snapshot was 99–101% of a full one in every configuration tried, so it saved no bandwidth at this size. The live Agora mirror keeps the change feed (it sends only changed points; a restored shard would also replace the device-wide BM25 IDF and Chronos times). Don't claim a bandwidth win for partial snapshots | `docs/BENCHMARKS.md` "Partial-snapshot mirror refresh" |
 | F2 Recency ranking | ❌ not built: the golden set has no time dimension, so there is no way yet to show it helps (AGENT.md §5) | — |
@@ -63,7 +63,7 @@ Smaran's core is built, tested and measured, and it sits in the white space the 
 | Retrieval eval (hit@1, hit@5, MRR; hybrid vs dense vs BM25) | 14 §2.2 | ❌ | Nothing in `bench/` |
 | "Why here?" badge on every memory | 14 §2.3 | ◐ | Reason shown on write result and in the decision log, not on memory rows or search hits |
 | Kill-and-replay beat + counters | 14 §2.4 | ◐ | Replay logic and tests exist (`device/core.py` counts `recovered`); no `demo.py kill`, no UI counters |
-| Cohen's kappa | 14 §2.5 | ◐ | Measured with Claude as second labeller: residency 1.000, criticality 0.661. Say "AI second labeller" in every claim |
+| Cohen's kappa | 14 §2.5 | ◐ | Measured with an AI model as second labeller: residency 1.000, criticality 0.661. Say "AI second labeller" in every claim |
 | Payload indexes on every shard and the server | 12 §3 | ✅ | `store.py:59-60`, `gateway/server.py` |
 | `optimize()` on an idle timer | 12 §4 | ✅ | `hermes.py` |
 | Partial-snapshot mirror refresh | 14 §3.1 | ❌ | Post-freeze item |
@@ -172,7 +172,7 @@ Cut rule: if `play b5` is not 10/10, keep the command for Q&A and leave it out o
 1. A member who did not write the labels fills `residency_2` and `criticality_2` for `h001`–`h060` in `ml/data/handwritten_notes.csv`, without looking at the first labels.
 2. `python -m ml.train` → kappa goes into BENCHMARKS; update the README limitation line.
 
-Status (29 Sep): steps 1–2 done with Claude as the second labeller, not a team member; README and BENCHMARKS say so. Still open: a human relabel, and tightening the criticality 1 vs 2 definition (κ 0.661 < 0.7).
+Status (29 Sep): steps 1–2 done with an AI model as the second labeller, not a team member; README and BENCHMARKS say so. Still open: a human relabel, and tightening the criticality 1 vs 2 definition (κ 0.661 < 0.7).
 
 Cut rule: if it isn't done by 30 Sep, keep the limitation line as it is.
 

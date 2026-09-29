@@ -282,7 +282,7 @@ def to_markdown(r: dict) -> str:
             la = x["label_agreement"]
             if isinstance(la, dict):
                 agree = (f"Label agreement (Cohen's kappa, {la['n']} test notes): residency **{la['residency_kappa']}**, "
-                         f"criticality **{la['criticality_kappa']}** (target 0.7). The second labeller was **Claude, an AI "
+                         f"criticality **{la['criticality_kappa']}** (target 0.7). The second labeller was **an AI language "
                          "model**, not a human: it labelled from the written class definitions without being shown the first "
                          "labels (apart from the first two rows, seen by accident). Reported as measured; no label was changed "
                          "to raise it. A human second labeller is still worth adding.")
