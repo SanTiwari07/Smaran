@@ -238,9 +238,9 @@ Start the full stack with a single command:
 
 ## <img src="docs/assets/icons/video.svg" width="22" height="22" align="center" alt="" /> Video Demonstration
 
-> <img src="docs/assets/icons/play-circle.svg" width="16" height="16" align="center" alt="" /> **Pitch & Walkthrough Video**: [Link to 3-Minute Video Demo](https://youtu.be/) *(Demonstrating Beats 1–5: offline note generation, PII guardrails in Krypta, version-vector conflict resolution, and the crash recovery test).*
+> <img src="docs/assets/icons/play-circle.svg" width="16" height="16" align="center" alt="" /> **Full 1080p Video Walkthrough**: [Watch demo.mp4](demo.mp4) *(A complete 4-minute end-to-end demonstration covering the vision, multi-shard memory, Gemini online synthesis, 11ms offline recall, Themis CRDT conflict resolution, Krypta privacy gate, and live mathematical proofs).*
 
-See [docs/DEMO.md](docs/DEMO.md) for the exact step-by-step presenter script and backup instructions.
+See [docs/DEMO.md](docs/DEMO.md) for the exact step-by-step presenter script, timeline, and backup instructions.
 
 ---
 

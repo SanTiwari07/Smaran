@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* Red Horizon: the Mars design system (see design.md at the repo root). Dark is the default.
+/* Red Horizon: the Mars design system (see docs/design.md). Dark is the default.
    Warm ground colours are the world; cyan, amber, green, violet and red are instruments that
    carry meaning. Offline is "on the surface", not an error, so it never uses the red. */
 @theme {

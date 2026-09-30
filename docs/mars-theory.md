@@ -107,7 +107,7 @@ Sub-brand line for stage headings: **"Smaran: memory for the surface."**
 
 ## 9. Logo
 
-**Orbit S** is the chosen mark: a geometric S built from two arcs on a rust rounded square, with a cyan dot for the relay in view. It ties to the theory directly (orbit, relay) and works as favicon, app icon and lockup. Files are in [logo/](logo), previewed in [logo-options.html](logo-options.html). Wordmark: lowercase **smaran**, Space Grotesk 700, +0.02em tracking, outlined.
+**Orbit S** is the chosen mark: a geometric S built from two arcs on a rust rounded square, with a cyan dot for the relay in view. It ties to the theory directly (orbit, relay) and works as favicon, app icon and lockup. Files are in [../logo/](../logo), previewed in [logo-options.html](../logo/logo-options.html). Wordmark: lowercase **smaran**, Space Grotesk 700, +0.02em tracking, outlined.
 
 ## 10. What changes in the other files once this is approved
 

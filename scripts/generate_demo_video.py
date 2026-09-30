@@ -22,8 +22,8 @@ import time
 ROOT = Path(__file__).resolve().parents[1]
 VID_DIR = ROOT / "runtime" / "video_recordings"
 AUDIO_DIR = ROOT / "runtime" / "video_audio"
-OUT_MP4 = ROOT / "smaran_demo.mp4"
-DEMO_COPY_MP4 = ROOT / "demo.mp4"
+OUT_MP4 = ROOT / "demo.mp4"
+
 
 VID_DIR.mkdir(parents=True, exist_ok=True)
 AUDIO_DIR.mkdir(parents=True, exist_ok=True)
@@ -621,9 +621,17 @@ def assemble_final_video(video_path: Path, durations: dict):
         print("FFmpeg error:", res.stderr)
         raise RuntimeError("FFmpeg failed to encode MP4")
 
-    # Copy to demo.mp4 as well
-    import shutil
-    shutil.copy2(OUT_MP4, DEMO_COPY_MP4)
+    # Clean up intermediate recordings to keep workspace clean
+    for f in VID_DIR.glob("*.webm"):
+        try:
+            f.unlink()
+        except Exception:
+            pass
+    for f in AUDIO_DIR.glob("*.mp3"):
+        try:
+            f.unlink()
+        except Exception:
+            pass
 
     size_mb = OUT_MP4.stat().st_size / (1024 * 1024)
     duration = get_audio_duration(OUT_MP4)

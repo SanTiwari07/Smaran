@@ -21,3 +21,11 @@ bench/results.json
 .hypothesis/
 .pytest_cache/
 frontend/tsconfig.tsbuildinfo
+
+# Media and video artifacts
+*.mp4
+*.webm
+*.avi
+runtime/video_audio/
+runtime/video_recordings/
+

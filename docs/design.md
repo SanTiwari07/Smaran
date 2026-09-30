@@ -2,7 +2,7 @@
 
 **Status: APPROVED and FROZEN (2026-09-30).** Changes only for bugs or additions that follow these rules.
 
-Theme: **astronauts on Mars**. Story, vocabulary and naming: [mars-theory.md](mars-theory.md); logo: [logo-options.html](logo-options.html). One visual language for every page: the mission-control dashboard, the auto-play demo, and the scroll-through story.
+Theme: **astronauts on Mars**. Story, vocabulary and naming: [mars-theory.md](mars-theory.md); logo: [logo-options.html](../logo/logo-options.html). One visual language for every page: the mission-control dashboard, the auto-play demo, and the scroll-through story.
 
 This document is a **one-time approval gate**. Once approved, the tokens, motifs and rules below are frozen. Later changes are limited to bug fixes and additions that follow these rules; the look itself is not reopened.
 
