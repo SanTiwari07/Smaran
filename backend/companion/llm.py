@@ -11,6 +11,7 @@ Everything that decides a route is recorded in the returned `route` dict, which 
 dashboard shows and the tests assert on. A model failure downgrades to the next route; it
 never raises into the user's request.
 """
+import os
 import re
 import time
 from dataclasses import dataclass, field
@@ -80,6 +81,72 @@ class LocalSLM:
         return round((time.perf_counter() - t0) * 1000)
 
 
+class GeminiLLM:
+    """Google Gemini API (https://ai.google.dev/) for cloud LLM answers.
+    Privacy invariant: private (Krypta) memories are NEVER sent to Gemini.
+    """
+    kind = "gemini"
+
+    def __init__(self, api_key: str | None = None, model: str | None = None, base_url: str | None = None,
+                 client: httpx.Client | None = None, timeout: float = 30.0):
+        self.key = api_key if api_key is not None else (settings.gemini_api_key or os.environ.get("GEMINI_API_KEY", ""))
+        self.model = model or settings.gemini_model or os.environ.get("GEMINI_MODEL", "gemini-2.0-flash")
+        self.base_url = (base_url or settings.gemini_url or os.environ.get("GEMINI_URL", "")).rstrip("/")
+        if not self.base_url:
+            self.base_url = "https://generativelanguage.googleapis.com"
+        self.client = client or httpx.Client(timeout=timeout)
+
+    def available(self) -> bool:
+        return bool(self.key and self.key.strip())
+
+    def chat(self, messages: list[dict], json_mode: bool = False, max_tokens: int = 300) -> str:
+        # 1. Try Google's OpenAI-compatible endpoint
+        try:
+            r = self.client.post(
+                f"{self.base_url}/v1beta/openai/chat/completions",
+                headers={"authorization": f"Bearer {self.key}", "content-type": "application/json"},
+                json={"model": self.model, "messages": messages, "max_tokens": max_tokens, "temperature": 0.1})
+            if r.status_code == 200:
+                return r.json()["choices"][0]["message"]["content"].strip()
+        except Exception:
+            pass
+
+        # 2. Native REST generateContent endpoint fallback
+        system_text = ""
+        user_text = []
+        for m in messages:
+            role = m.get("role")
+            content = m.get("content", "")
+            if role == "system":
+                system_text += content + "\n"
+            elif role == "user":
+                user_text.append(content)
+            elif role == "assistant":
+                user_text.append(f"Assistant: {content}")
+
+        payload = {
+            "contents": [{"parts": [{"text": "\n\n".join(user_text)}]}],
+            "generationConfig": {"temperature": 0.1, "maxOutputTokens": max_tokens},
+        }
+        if system_text:
+            payload["systemInstruction"] = {"parts": [{"text": system_text.strip()}]}
+        if json_mode:
+            payload["generationConfig"]["responseMimeType"] = "application/json"
+
+        url = f"{self.base_url}/v1beta/models/{self.model}:generateContent?key={self.key}"
+        r = self.client.post(url, json=payload)
+        if r.status_code == 404 and "gemini-2.0-flash" in self.model:
+            alt_url = f"{self.base_url}/v1beta/models/gemini-1.5-flash:generateContent?key={self.key}"
+            r = self.client.post(alt_url, json=payload)
+        r.raise_for_status()
+        data = r.json()
+        candidates = data.get("candidates", [])
+        if not candidates:
+            return ""
+        parts = candidates[0].get("content", {}).get("parts", [])
+        return "".join(p.get("text", "") for p in parts).strip()
+
+
 class CloudLLM:
     """Any OpenAI-compatible chat endpoint (CLOUD_LLM_URL, CLOUD_LLM_KEY, CLOUD_LLM_MODEL)."""
     kind = "cloud"
@@ -116,10 +183,11 @@ def build_context(hits: list[dict], budget: int = 1400) -> tuple[str, list[dict]
 
 
 class ModelRouter:
-    def __init__(self, local: LocalSLM | None = None, cloud: CloudLLM | None = None, online=lambda: True,
-                 use_local: bool = True):
+    def __init__(self, local: LocalSLM | None = None, cloud: CloudLLM | None = None,
+                 gemini: GeminiLLM | None = None, online=lambda: True, use_local: bool = True):
         self.local = local if local is not None else LocalSLM()
         self.cloud = cloud if cloud is not None else CloudLLM()
+        self.gemini = gemini if gemini is not None else GeminiLLM()
         self.online = online
         self.use_local = use_local
 
@@ -127,13 +195,15 @@ class ModelRouter:
     def status(self) -> dict:
         return {"local": {"model": self.local.model, "available": self.use_local and self.local.available(),
                           "runtime": "Ollama (llama.cpp)", "url": self.local.base_url},
+                "gemini": {"model": self.gemini.model, "configured": self.gemini.available(),
+                           "usable_now": self.gemini.available() and bool(self.online())},
                 "cloud": {"model": self.cloud.model, "configured": self.cloud.available(),
                           "usable_now": self.cloud.available() and bool(self.online())},
-                "policy": "local first; cloud only if configured, online, and no private memory in context"}
+                "policy": "local first; gemini/cloud only if configured, online, and no private memory in context"}
 
     # ---- answering -------------------------------------------------------------------
     def answer(self, question: str, hits: list[dict], prefer_cloud: bool = False, extra: str = "",
-               cover: list[str] | None = None) -> tuple[str, Route]:
+               cover: list[str] | None = None, provider: str | None = None) -> tuple[str, Route]:
         """`extra` is an authoritative structured fact block (e.g. the exact open-task list)
         that is put in front of the retrieved memories and used as the no-model answer."""
         context, used = build_context(hits)
@@ -142,16 +212,32 @@ class ModelRouter:
         private = any(h["shard"] == "krypta" for h in used)
         tried: list[dict] = []
         candidates: list[str] = []
-        if prefer_cloud and self.cloud.available() and self.online() and not private:
+
+        # If user or config explicitly prefers Gemini or cloud
+        if (provider == "gemini" or prefer_cloud) and self.gemini.available() and self.online() and not private:
+            candidates.append("gemini")
+        if (provider == "cloud" or prefer_cloud) and self.cloud.available() and self.online() and not private:
             candidates.append("cloud")
-        if self.use_local and self.local.available():
+
+        # Local on-device model (Ollama)
+        if self.use_local and self.local.available() and provider != "gemini":
             candidates.append("local-slm")
-        if not prefer_cloud and self.cloud.available() and self.online() and not private and "local-slm" not in candidates:
-            candidates.append("cloud")            # only when there is no local model at all
+
+        # Cloud / Gemini fallback if no local model is available
+        if not prefer_cloud and self.gemini.available() and self.online() and not private and "local-slm" not in candidates and "gemini" not in candidates:
+            candidates.append("gemini")
+        if not prefer_cloud and self.cloud.available() and self.online() and not private and "local-slm" not in candidates and "cloud" not in candidates:
+            candidates.append("cloud")
+
         msgs = [{"role": "system", "content": SYSTEM},
                 {"role": "user", "content": f"Memories:\n{context or '(none)'}\n\nQuestion: {question}"}]
         for route in candidates:
-            llm = self.cloud if route == "cloud" else self.local
+            if route == "gemini":
+                llm = self.gemini
+            elif route == "cloud":
+                llm = self.cloud
+            else:
+                llm = self.local
             t0 = time.perf_counter()
             try:
                 text = llm.chat(msgs)
@@ -160,7 +246,12 @@ class ModelRouter:
                     tried.append({"route": route, "error": f"answer rejected by grounding check: {bad}"})
                     continue
                 if text:
-                    why = ("cloud requested and allowed" if route == "cloud" else "on-device model available; data stayed local")
+                    if route == "gemini":
+                        why = "Gemini cloud answer; online, context verified non-private"
+                    elif route == "cloud":
+                        why = "cloud requested and allowed"
+                    else:
+                        why = "on-device model available; data stayed local"
                     return text, Route(route, llm.model, why, (time.perf_counter() - t0) * 1000, tried)
             except Exception as e:  # noqa: BLE001
                 tried.append({"route": route, "error": str(e)[:120]})
@@ -168,8 +259,8 @@ class ModelRouter:
             why = "no model available" + ("; private memory in context blocks cloud" if private else "")
         else:
             why = "model call failed"
-        if private and self.cloud.available():
-            why += "; cloud blocked: private memory in context"
+        if private and (self.cloud.available() or self.gemini.available()):
+            why += "; cloud/gemini blocked: private memory in context"
         t0 = time.perf_counter()
         text = extra or extractive_answer(question, used)
         return text, Route("extractive", "rules", why + " -> answered by rules from local memory",

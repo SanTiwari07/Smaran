@@ -9,6 +9,12 @@ class ChatIn(BaseModel):
     text: str = Field(min_length=1, max_length=2000)
     request_id: str | None = None
     prefer_cloud: bool = False
+    provider: str | None = None     # "gemini" | "local" | "cloud"
+
+
+class GeminiConfigIn(BaseModel):
+    api_key: str
+    model: str | None = None
 
 
 class ConfirmIn(BaseModel):
@@ -29,7 +35,7 @@ def build_router(c: Companion) -> APIRouter:
 
     @r.post("/chat")
     def chat(body: ChatIn):
-        return c.chat(body.text, body.request_id, body.prefer_cloud)
+        return c.chat(body.text, body.request_id, body.prefer_cloud, body.provider)
 
     @r.post("/confirm")
     def confirm(body: ConfirmIn):
@@ -111,6 +117,14 @@ def build_router(c: Companion) -> APIRouter:
     def model(use_local: bool):
         """Demo switch: take the local SLM out of the loop to show the rules-only fallback."""
         c.router.use_local = use_local
+        return c.router.status()
+
+    @r.post("/gemini/configure")
+    def configure_gemini(body: GeminiConfigIn):
+        """Configure or update the Google Gemini API key at runtime."""
+        c.router.gemini.key = body.api_key.strip()
+        if body.model:
+            c.router.gemini.model = body.model.strip()
         return c.router.status()
 
     @r.post("/seed-story")

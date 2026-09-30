@@ -8,8 +8,9 @@ export function RouteBadge({ route }: { route: Route }) {
     "local-slm": { tone: "ok" as const, text: `On-device AI · ${route.model}` },
     extractive: { tone: "gold" as const, text: "Rules from local memory (no model)" },
     cloud: { tone: "live" as const, text: `Cloud · ${route.model}` },
+    gemini: { tone: "live" as const, text: `Gemini · ${route.model}` },
     rules: { tone: "neutral" as const, text: "Rules · no model needed" },
-  }[route.route];
+  }[route.route] || { tone: "neutral" as const, text: `${route.route} · ${route.model}` };
   return <Badge tone={meta.tone} title={route.reason}>{meta.text}{route.latency_ms ? ` · ${Math.round(route.latency_ms)} ms` : ""}</Badge>;
 }
 
@@ -44,8 +45,14 @@ export function EdgeStrip({ s }: { s: CompanionStatus | null }) {
     <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
       <Block title="AI engine">
         <Tick ok={s.ai.local.available}>Local SLM {s.ai.local.available ? s.ai.local.model : "not running"}</Tick>
-        <Tick ok={s.ai.cloud.configured}>Cloud fallback {s.ai.cloud.configured ? (s.ai.cloud.usable_now ? "ready" : "configured, offline") : "not configured"}</Tick>
-        <div className="text-xs text-muted">Active route: {s.ai.active_route === "local-slm" ? "on device" : "rules from memory"}</div>
+        <Tick ok={Boolean(s.ai.gemini?.configured || s.ai.cloud.configured)}>
+          {s.ai.gemini?.configured
+            ? `Gemini (${s.ai.gemini.model})`
+            : s.ai.cloud.configured
+            ? `Cloud (${s.ai.cloud.model})`
+            : "Cloud / Gemini not configured"}
+        </Tick>
+        <div className="text-xs text-muted">Active route: {s.ai.active_route === "local-slm" ? "on device" : s.ai.active_route === "gemini" ? "Gemini cloud" : "rules from memory"}</div>
       </Block>
       <Block title="Memory">
         <Tick ok>Local vector index ({m.embedder})</Tick>

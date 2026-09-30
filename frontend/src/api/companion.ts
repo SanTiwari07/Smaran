@@ -15,7 +15,7 @@ async function req<T>(url: string, init?: RequestInit): Promise<T> {
 }
 
 export interface Step { step: string; detail: string; ms: number }
-export interface Route { route: "local-slm" | "extractive" | "cloud" | "rules"; model: string; reason: string; latency_ms: number; tried?: { route: string; error: string }[] }
+export interface Route { route: "local-slm" | "extractive" | "cloud" | "gemini" | "rules"; model: string; reason: string; latency_ms: number; tried?: { route: string; error: string }[] }
 export interface Hit {
   payload: { op_id: string; text: string; kind: string; subject?: string | null; memory_type?: string | null; status: string; valid_from: number };
   shard: string; score: number; why: string[]; features: Record<string, number>;
@@ -68,7 +68,12 @@ export interface Conflict {
 }
 export interface CompanionStatus {
   device: string; label: string; online: boolean; queued: number;
-  ai: { local: { model: string; available: boolean; runtime: string }; cloud: { model: string; configured: boolean; usable_now: boolean }; policy: string; active_route: string };
+  ai: {
+    local: { model: string; available: boolean; runtime: string };
+    gemini?: { model: string; configured: boolean; usable_now: boolean };
+    cloud: { model: string; configured: boolean; usable_now: boolean };
+    policy: string; active_route: string;
+  };
   memory: { counts: { krypta: number; hermes: number; agora: number }; by_type: Record<string, number>; index: string; embedder: string;
     encryption: { chat_and_audit: string; key: string; shards: string } };
   sync: { queued: number; acked: number; last_sync: number | null; last_error: string | null; contested: number };
@@ -89,8 +94,10 @@ export interface MemoryRow { shard: string; op_id: string; text: string; kind: s
 const u = (d: string) => DEVICES[d];
 
 export const companion = {
-  chat: (d: string, text: string, prefer_cloud = false) =>
-    req<ChatResult>(`${u(d)}/companion/chat`, { method: "POST", body: JSON.stringify({ text, prefer_cloud }) }),
+  chat: (d: string, text: string, prefer_cloud = false, provider?: string) =>
+    req<ChatResult>(`${u(d)}/companion/chat`, { method: "POST", body: JSON.stringify({ text, prefer_cloud, provider }) }),
+  configureGemini: (d: string, api_key: string, model?: string) =>
+    req<CompanionStatus["ai"]>(`${u(d)}/companion/gemini/configure`, { method: "POST", body: JSON.stringify({ api_key, model }) }),
   confirm: (d: string, audit_id: number) =>
     req<ActionResult>(`${u(d)}/companion/confirm`, { method: "POST", body: JSON.stringify({ audit_id }) }),
   tasks: (d: string) => req<Task[]>(`${u(d)}/companion/tasks`),

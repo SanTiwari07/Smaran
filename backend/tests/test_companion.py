@@ -4,7 +4,7 @@ from datetime import datetime
 
 from backend.common.schema import HERMES, KRYPTA
 from backend.companion.extract import extract, split_tasks
-from backend.companion.llm import CloudLLM, ModelRouter, build_context, ungrounded
+from backend.companion.llm import CloudLLM, GeminiLLM, ModelRouter, build_context, ungrounded
 from backend.companion.story import HISTORY, load_story
 from backend.companion.timeparse import parse_due, query_window
 from backend.tests.conftest import FakeLLM
@@ -213,6 +213,53 @@ def test_cloud_is_used_only_when_configured_online_and_allowed():
     assert r2.answer("q", _hits("fact"), prefer_cloud=True)[1].route == "extractive"
     assert ModelRouter(local=FakeLLM(), cloud=cloud, online=lambda: True).answer("q", _hits("f"))[1].route == "local-slm"
     assert ModelRouter(local=FakeLLM(), cloud=CloudLLM(), online=lambda: True).status()["cloud"]["configured"] is False
+
+
+def test_gemini_is_used_when_configured_online_and_allowed():
+    gemini = FakeLLM(reply="Gemini says [1]", model="gemini-2.0-flash")
+    r = ModelRouter(local=FakeLLM(fail=True), cloud=CloudLLM(), gemini=gemini, online=lambda: True)
+    assert r.answer("q", _hits("fact"), prefer_cloud=True)[1].route == "gemini"
+    assert r.answer("q", _hits("fact"), provider="gemini")[1].route == "gemini"
+
+    # offline fallback
+    r_offline = ModelRouter(local=FakeLLM(fail=True), cloud=CloudLLM(), gemini=gemini, online=lambda: False)
+    assert r_offline.answer("q", _hits("fact"), prefer_cloud=True)[1].route == "extractive"
+
+    # private (Krypta) memory invariant: Gemini is blocked
+    r_private = ModelRouter(local=FakeLLM(fail=True), cloud=CloudLLM(), gemini=gemini, online=lambda: True)
+    out, route = r_private.answer("q", _hits("confidential", shard="krypta"), prefer_cloud=True)
+    assert route.route == "extractive"
+    assert "private memory" in route.reason
+
+    # unconfigured gemini
+    assert ModelRouter(local=FakeLLM(), cloud=CloudLLM(), gemini=GeminiLLM(api_key=""), online=lambda: True).status()["gemini"]["configured"] is False
+
+
+def test_gemini_llm_client_mock():
+    import httpx
+
+    # Test OpenAI-compatible format handling
+    def handler(request: httpx.Request):
+        if "openai" in str(request.url):
+            return httpx.Response(200, json={"choices": [{"message": {"content": "Answer from Gemini OpenAI compat"}}]})
+        return httpx.Response(200, json={"candidates": [{"content": {"parts": [{"text": "Answer from Gemini REST"}]}}]})
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    llm = GeminiLLM(api_key="test-key-123", client=client)
+    assert llm.available() is True
+    res = llm.chat([{"role": "user", "content": "hello"}])
+    assert "Gemini" in res
+
+    # Test native REST fallback
+    def rest_only_handler(request: httpx.Request):
+        if "openai" in str(request.url):
+            return httpx.Response(404)
+        return httpx.Response(200, json={"candidates": [{"content": {"parts": [{"text": "Native Gemini answer"}]}}]})
+
+    client2 = httpx.Client(transport=httpx.MockTransport(rest_only_handler))
+    llm2 = GeminiLLM(api_key="test-key-123", client=client2)
+    res2 = llm2.chat([{"role": "user", "content": "hello"}])
+    assert res2 == "Native Gemini answer"
 
 
 def test_grounding_check_rejects_invented_citations():

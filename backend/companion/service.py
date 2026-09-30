@@ -118,7 +118,8 @@ class Companion:
         return recall_fn(self.dev, q, k, self.clock(), self.subjects, rerank_on, allow_cloud)
 
     # ---- the agent loop --------------------------------------------------------------
-    def chat(self, text: str, request_id: str | None = None, prefer_cloud: bool = False) -> dict:
+    def chat(self, text: str, request_id: str | None = None, prefer_cloud: bool = False,
+             provider: str | None = None) -> dict:
         t_start = time.perf_counter()
         request_id = request_id or uuid.uuid4().hex[:12]
         steps: list[dict] = []
@@ -203,7 +204,8 @@ class Companion:
                     cover += [t["title"] for t in structured.get("tasks", []) if t.get("title")]
             t0 = time.perf_counter()
             extra = NL.join(blocks)
-            answer_text, route = self.router.answer(pl.question or text, rec["hits"], prefer_cloud, extra, cover)
+            answer_text, route = self.router.answer(pl.question or text, rec["hits"], prefer_cloud, extra, cover,
+                                                    provider=provider)
             step("answer", f"route={route.route} model={route.model} {route.latency_ms:.0f} ms", t0)
             context = self._compact_hits(rec["hits"])
             first = [why_res["op_id"]] if why_res and why_res.get("found") else []

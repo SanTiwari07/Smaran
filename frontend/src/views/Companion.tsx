@@ -146,6 +146,10 @@ export default function Companion({ device, setDevice, devices }: { device: stri
   const conflicts = usePoll(() => companion.conflicts(device), [device], 1500);
   const [stage, setStage] = useState<StageInfo | null>(null);
   const [resolving, setResolving] = useState(false);
+  const [provider, setProvider] = useState<"auto" | "gemini" | "local-slm" | "extractive">("auto");
+  const [showGeminiModal, setShowGeminiModal] = useState(false);
+  const [geminiKeyInput, setGeminiKeyInput] = useState("");
+  const [geminiSaveMsg, setGeminiSaveMsg] = useState<string | null>(null);
 
   useEffect(() => { bottom.current?.scrollIntoView({ behavior: "smooth" }); }, [turns.length]);
   useEffect(() => { setErr(null); }, [device]);
@@ -172,6 +176,20 @@ export default function Companion({ device, setDevice, devices }: { device: stri
     } finally { setResolving(false); }
   };
 
+  const saveGeminiKey = async () => {
+    if (!geminiKeyInput.trim()) return;
+    try {
+      for (const d of devices) {
+        await companion.configureGemini(d, geminiKeyInput.trim());
+      }
+      setGeminiSaveMsg("Gemini API key configured successfully!");
+      status.refresh();
+      setTimeout(() => { setShowGeminiModal(false); setGeminiSaveMsg(null); }, 1200);
+    } catch (e) {
+      setGeminiSaveMsg(e instanceof Error ? e.message : String(e));
+    }
+  };
+
   const send = async (t: string) => {
     if (!t.trim() || busy) return;
     setBusy(true);
@@ -179,7 +197,8 @@ export default function Companion({ device, setDevice, devices }: { device: stri
     setTurns((x) => [...x, { who: "you", text: t, at: Date.now(), device }]);
     setText("");
     try {
-      const r = await companion.chat(device, t);
+      const p = provider === "auto" ? undefined : provider;
+      const r = await companion.chat(device, t, provider === "gemini", p);
       setTurns((x) => [...x, { who: "smaran", text: r.reply, result: r, at: Date.now(), device }]);
       status.refresh(); tasks.refresh(); brief.refresh();
     } catch (e) {
@@ -201,10 +220,45 @@ export default function Companion({ device, setDevice, devices }: { device: stri
           ))}
         </div>
         <Button variant="secondary" onClick={toggleLink}>{online ? "Go offline" : "Reconnect"}</Button>
+        <div className="flex items-center gap-2 rounded-md border border-line bg-surface/60 px-2.5 py-1 text-xs">
+          <span className="text-muted">Route:</span>
+          <select value={provider} onChange={(e) => {
+            const val = e.target.value as "auto" | "gemini" | "local-slm" | "extractive";
+            if (val === "gemini" && !status.data?.ai.gemini?.configured) setShowGeminiModal(true);
+            setProvider(val);
+          }} className="rounded bg-black/40 px-2 py-1 text-xs text-ink outline-none border border-line">
+            <option value="auto">Auto (Local First &#8594; Cloud)</option>
+            <option value="gemini">Google Gemini {status.data?.ai.gemini?.configured ? "✓" : "(Set Key)"}</option>
+            <option value="local-slm">Local SLM (Ollama)</option>
+            <option value="extractive">Rules Only (No LLM)</option>
+          </select>
+          <button type="button" onClick={() => setShowGeminiModal(!showGeminiModal)}
+            className="text-[11px] text-muted hover:text-ink underline">
+            {status.data?.ai.gemini?.configured ? `Gemini ${status.data?.ai.gemini?.model ?? "2.0-flash"}` : "Set Gemini Key"}
+          </button>
+        </div>
         <span className="text-sm text-muted">
           {online ? "Online: local AI preferred, sync running." : "Offline: everything below still works, changes queue on this device."}
         </span>
       </div>
+      {showGeminiModal && (
+        <div className="rounded-lg border border-[var(--rust-hot)]/40 bg-surface/95 p-3.5 shadow-lg">
+          <div className="flex items-center justify-between">
+            <h4 className="text-sm font-semibold text-ink">Configure Google Gemini for LLM Answers</h4>
+            <button onClick={() => setShowGeminiModal(false)} className="text-xs text-muted hover:text-ink">✕</button>
+          </div>
+          <p className="mt-1 text-xs text-muted">
+            Enter your Google Gemini API key. It will be used for cloud LLM answers when online (private Krypta memories are strictly protected and stay local).
+          </p>
+          <div className="mt-2.5 flex gap-2">
+            <input type="password" placeholder="AIzaSy..." value={geminiKeyInput}
+              onChange={(e) => setGeminiKeyInput(e.target.value)}
+              className="flex-1 rounded border border-line bg-black/40 px-3 py-1.5 text-xs text-ink outline-none" />
+            <Button variant="primary" onClick={saveGeminiKey}>Save Key</Button>
+          </div>
+          {geminiSaveMsg && <div className="mt-1.5 text-xs text-ok">{geminiSaveMsg}</div>}
+        </div>
+      )}
       {stage && (
         <div className="q-card hud flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-2" aria-live="polite">
           {STAGES.map((n, i) => (

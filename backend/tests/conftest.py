@@ -97,16 +97,17 @@ def campus_client(campus_gateway):
 @pytest.fixture
 def make_companion(tmp_path, embedder, campus_client):
     gateway_client = campus_client
-    from backend.companion.llm import CloudLLM, ModelRouter
+    from backend.companion.llm import CloudLLM, GeminiLLM, ModelRouter
     from backend.companion.service import Companion
     from backend.device.classifier import PersonalClassifier
     made = []
 
-    def _make(device_id="A", local=None, cloud=None, http="gateway", use_local=True):
+    def _make(device_id="A", local=None, cloud=None, gemini=None, http="gateway", use_local=True):
         root = tmp_path / f"device-{device_id}"
         d = Device(device_id, root, embedder, PersonalClassifier(),
                    http=gateway_client if http == "gateway" else http, log=Log(f"dev-{device_id}", tmp_path / "logs"))
-        router = ModelRouter(local=local or FakeLLM(fail=True), cloud=cloud or CloudLLM(), online=lambda: d.online,
+        router = ModelRouter(local=local or FakeLLM(fail=True), cloud=cloud or CloudLLM(),
+                             gemini=gemini or GeminiLLM(), online=lambda: d.online,
                              use_local=use_local)
         c = Companion(d, Hermes(d), router)
         made.append(d)

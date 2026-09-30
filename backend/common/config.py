@@ -48,6 +48,10 @@ class Settings:
     cloud_llm_url: str = _env("CLOUD_LLM_URL", "")
     cloud_llm_key: str = _env("CLOUD_LLM_KEY", "")
     cloud_llm_model: str = _env("CLOUD_LLM_MODEL", "")
+    # Google Gemini API for cloud LLM answers.
+    gemini_api_key: str = _env("GEMINI_API_KEY", "")
+    gemini_model: str = _env("GEMINI_MODEL", "gemini-2.0-flash")
+    gemini_url: str = _env("GEMINI_URL", "https://generativelanguage.googleapis.com")
     # Which knowledge the gateway seeds into the fleet collection ("campus" or "manuals")
     # "personal" (student/developer companion) or "fleet" (the original maintenance-notes domain)
     domain: str = _env("SMARAN_DOMAIN", "personal")
