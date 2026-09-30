@@ -29,3 +29,9 @@ frontend/tsconfig.tsbuildinfo
 runtime/video_audio/
 runtime/video_recordings/
 
+# Presentations and pitch decks
+ppt/
+ppt.*
+ppt
+
+
