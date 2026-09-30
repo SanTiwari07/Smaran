@@ -36,6 +36,9 @@ def export_pdf():
             "document.getElementById('deck').style.height = '100vh';"
         )
 
+        REVIEW_DIR = ROOT / "ppt" / "review_slides"
+        REVIEW_DIR.mkdir(parents=True, exist_ok=True)
+
         frames = []
         for i in range(1, 9):
             page.evaluate(f"showSlide({i})")
@@ -43,7 +46,8 @@ def export_pdf():
             shot_bytes = page.screenshot()
             img = Image.open(io.BytesIO(shot_bytes)).convert("RGB")
             frames.append(img)
-            print(f"Captured Slide {i} for PDF...")
+            img.save(str(REVIEW_DIR / f"slide_{i}.png"))
+            print(f"Captured Slide {i} for PDF and review...")
 
         frames[0].save(
             str(PDF_PATH),

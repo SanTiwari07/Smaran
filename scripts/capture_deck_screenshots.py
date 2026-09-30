@@ -1,9 +1,10 @@
 """
-Capture authentic, high-resolution screenshots from the running Smaran application.
-Outputs into ppt/screenshots/.
+Captures authentic, high-resolution screenshots from the running Smaran application.
+Uses exact hash routes (#control, #memory, #conflicts, #prove, #companion).
 """
+import io
 from pathlib import Path
-import time
+from PIL import Image
 from playwright.sync_api import sync_playwright
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -26,117 +27,124 @@ def capture_all():
             device_scale_factor=1.5,
         )
         page = context.new_page()
-        page.add_init_script(
-            "document.documentElement.style.backgroundColor = '#0b0709';"
-            "document.body.style.backgroundColor = '#0b0709';"
-        )
 
-        # 1. Hero / Control Center
-        print("Capturing 01_control_center.png...")
-        page.goto("http://127.0.0.1:5173/control", wait_until="networkidle")
+        # 1. Hero: Control Center
+        print("Capturing 01_control_center.png (#control)...")
+        page.goto("http://127.0.0.1:5173/#control", wait_until="networkidle")
         page.wait_for_timeout(2500)
         page.screenshot(path=str(SHOT_DIR / "01_control_center.png"))
 
-        # 2. Companion Chat with Grounded Gemini Citation & Thought Trace
-        print("Capturing 02_companion_grounded.png...")
-        page.goto("http://127.0.0.1:5173/companion", wait_until="networkidle")
-        page.wait_for_timeout(1500)
-        # Type realistic input
-        input_box = page.locator("textarea, input[type='text']").first
-        if input_box.count() > 0:
-            input_box.fill("Where is the backup oxygen valve and what is the torque spec?")
-            send_btn = page.locator("button:has-text('Send'), button[type='submit']").first
-            if send_btn.count() > 0:
-                send_btn.click()
-                page.wait_for_timeout(3500)
-        # Expand provenance/reasoning if button present
+        # 2. Companion Chat with Grounded Gemini Citation (Online Mode)
+        print("Capturing 02_companion_grounded.png (#companion)...")
+        page.goto("http://127.0.0.1:5173/#companion", wait_until="networkidle")
+        page.wait_for_timeout(1000)
         try:
-            prov_btn = page.locator("button:has-text('Why did Smaran say this?'), button:has-text('Provenance'), button:has-text('Sources')").first
-            if prov_btn.count() > 0:
-                prov_btn.click()
-                page.wait_for_timeout(1000)
+            rec_btn = page.locator("button:has-text('Reconnect')").first
+            if rec_btn.count() > 0:
+                rec_btn.click()
+                page.wait_for_timeout(1500)
+        except Exception:
+            pass
+        # Click one of the suggestions to get an immediate grounded answer
+        try:
+            sug = page.locator("button:has-text('Why did we choose PostgreSQL?')").first
+            if sug.count() > 0:
+                sug.click()
+                page.wait_for_timeout(4500)
         except Exception:
             pass
         page.screenshot(path=str(SHOT_DIR / "02_companion_grounded.png"))
 
-        # 3. Companion in Offline Surface Mode with Task Queue
-        print("Capturing 03_companion_offline.png...")
-        # Toggle surface mode via Control Center
-        page.goto("http://127.0.0.1:5173/control", wait_until="networkidle")
-        page.wait_for_timeout(1500)
+        # 3. Companion in Offline Surface Mode
+        print("Capturing 03_companion_offline.png (#companion offline)...")
         try:
-            offline_btn = page.locator("button:has-text('Go offline')").first
-            if offline_btn.count() > 0:
-                offline_btn.click()
-                page.wait_for_timeout(1500)
+          off_btn = page.locator("button:has-text('Go offline')").first
+          if off_btn.count() > 0:
+              off_btn.click()
+              page.wait_for_timeout(1500)
         except Exception:
-            pass
-        # Return to companion
-        page.goto("http://127.0.0.1:5173/companion", wait_until="networkidle")
-        page.wait_for_timeout(1500)
-        input_box = page.locator("textarea, input[type='text']").first
-        if input_box.count() > 0:
-            input_box.fill("Schedule solar array maintenance for 08:00 UTC")
-            send_btn = page.locator("button:has-text('Send'), button[type='submit']").first
-            if send_btn.count() > 0:
-                send_btn.click()
-                page.wait_for_timeout(2500)
+          pass
         page.screenshot(path=str(SHOT_DIR / "03_companion_offline.png"))
 
-        # 4. Memory Explorer (Tri-Shard Partitioning)
-        print("Capturing 04_memory_explorer.png...")
-        page.goto("http://127.0.0.1:5173/explorer", wait_until="networkidle")
+        # Reconnect
+        try:
+          rec_btn = page.locator("button:has-text('Reconnect')").first
+          if rec_btn.count() > 0:
+              rec_btn.click()
+              page.wait_for_timeout(1000)
+        except Exception:
+          pass
+
+        # 4. Memory and Search (Explorer)
+        print("Capturing 04_memory_explorer.png (#memory)...")
+        page.goto("http://127.0.0.1:5173/#memory", wait_until="networkidle")
         page.wait_for_timeout(2500)
         page.screenshot(path=str(SHOT_DIR / "04_memory_explorer.png"))
 
-        # 5. Themis Causal CRDT Conflicts & Decisions
-        print("Capturing 05_conflicts_themis.png...")
-        # Simulate conflict from control center first
-        page.goto("http://127.0.0.1:5173/control", wait_until="networkidle")
-        page.wait_for_timeout(1000)
+        # 5. Themis Conflicts & Decisions
+        print("Capturing 05_conflicts_themis.png (#conflicts)...")
+        # First trigger a conflict simulation if possible
+        page.goto("http://127.0.0.1:5173/#control", wait_until="networkidle")
+        page.wait_for_timeout(1500)
         try:
-            conflict_btn = page.locator("button:has-text('Create conflict')").first
-            if conflict_btn.count() > 0:
-                conflict_btn.click()
-                page.wait_for_timeout(1500)
+          sim_btn = page.locator("button:has-text('Simulate conflict'), button:has-text('Inject conflict')").first
+          if sim_btn.count() > 0:
+              sim_btn.click()
+              page.wait_for_timeout(1500)
         except Exception:
-            pass
-        page.goto("http://127.0.0.1:5173/conflicts", wait_until="networkidle")
+          pass
+        page.goto("http://127.0.0.1:5173/#conflicts", wait_until="networkidle")
         page.wait_for_timeout(2500)
         page.screenshot(path=str(SHOT_DIR / "05_conflicts_themis.png"))
 
-        # 6. Prove It (Reproducible Mathematical Benchmark Suite)
-        print("Capturing 06_prove_it_benchmarks.png...")
-        page.goto("http://127.0.0.1:5173/prove", wait_until="networkidle")
+        # 6. Prove It Benchmarks
+        print("Capturing 06_prove_it_benchmarks.png (#prove)...")
+        page.goto("http://127.0.0.1:5173/#prove", wait_until="networkidle")
         page.wait_for_timeout(2000)
         try:
-            run_btn = page.locator("button:has-text('Run all'), button:has-text('Run')").first
-            if run_btn.count() > 0:
-                run_btn.click()
-                page.wait_for_timeout(3500)
+          run_btn = page.locator("button:has-text('Run all'), button:has-text('Run tests')").first
+          if run_btn.count() > 0:
+              run_btn.click()
+              page.wait_for_timeout(4000)
         except Exception:
-            pass
+          pass
         page.screenshot(path=str(SHOT_DIR / "06_prove_it_benchmarks.png"))
 
-        # 7. Reconnect & Reset demo state
-        page.goto("http://127.0.0.1:5173/control", wait_until="networkidle")
-        page.wait_for_timeout(1000)
-        try:
-            recon_btn = page.locator("button:has-text('Simulate reconnect')").first
-            if recon_btn.count() > 0:
-                recon_btn.click()
-                page.wait_for_timeout(1000)
-        except Exception:
-            pass
-
-        # 8. Mars Scrollytelling Visualizer
-        print("Capturing 07_story_mars.png...")
-        page.goto("http://127.0.0.1:5173/story/", wait_until="networkidle")
-        page.wait_for_timeout(2500)
-        page.screenshot(path=str(SHOT_DIR / "07_story_mars.png"))
-
         browser.close()
-    print("All authentic screenshots successfully captured into ppt/screenshots/!")
+
+    # Now create high-impact focused crops
+    print("Generating focused crops...")
+    # 02 crop
+    im2 = Image.open(SHOT_DIR / "02_companion_grounded.png")
+    w, h = im2.size
+    im2.crop((int(w * 0.10), int(h * 0.12), int(w * 0.90), int(h * 0.88))).save(
+        SHOT_DIR / "02_companion_online_crop.png"
+    )
+
+    # 03 crop
+    im3 = Image.open(SHOT_DIR / "03_companion_offline.png")
+    im3.crop((int(w * 0.10), int(h * 0.12), int(w * 0.90), int(h * 0.88))).save(
+        SHOT_DIR / "03_companion_offline_crop.png"
+    )
+
+    # 04 crop
+    im4 = Image.open(SHOT_DIR / "04_memory_explorer.png")
+    im4.crop((int(w * 0.05), int(h * 0.10), int(w * 0.95), int(h * 0.90))).save(
+        SHOT_DIR / "04_memory_crop.png"
+    )
+
+    # 05 crop
+    im5 = Image.open(SHOT_DIR / "05_conflicts_themis.png")
+    im5.crop((int(w * 0.05), int(h * 0.10), int(w * 0.95), int(h * 0.90))).save(
+        SHOT_DIR / "05_conflicts_crop.png"
+    )
+
+    # 06 crop
+    im6 = Image.open(SHOT_DIR / "06_prove_it_benchmarks.png")
+    im6.crop((int(w * 0.05), int(h * 0.10), int(w * 0.95), int(h * 0.90))).save(
+        SHOT_DIR / "06_prove_it_crop.png"
+    )
+    print("All authentic screenshots captured and cropped successfully!")
 
 
 if __name__ == "__main__":
