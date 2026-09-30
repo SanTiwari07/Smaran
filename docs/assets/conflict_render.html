@@ -1,0 +1,93 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@1,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --void:#0B0709;--basalt:#150D10;--regolith:#1F1316;--regolith-2:#2A1A1D;--ridge:#3A2427;
+  --rust:#C1440E;--rust-hot:#E8590C;--dust:#D9A066;--haze:#F2D3B3;
+  --suit:#F5F1EA;--suit-dim:#B9AFA6;--suit-mute:#7C716B;
+  --telemetry:#3DE0E6;--nominal:#5BE39A;--caution:#FFB020;--critical:#FF4D5E;--private:#B79CFF;
+}
+*{box-sizing:border-box;margin:0}
+body{background:var(--void);color:var(--suit);font:400 15px/1.5 Inter,sans-serif;padding:32px;display:flex;justify-content:center}
+.card{width:960px;background:var(--regolith);border:1px solid var(--ridge);border-radius:12px;padding:28px;box-shadow:0 12px 32px rgba(0,0,0,.6)}
+.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;border-bottom:1px solid var(--ridge);padding-bottom:16px}
+.title{font:700 22px "Space Grotesk";display:flex;align-items:center;gap:12px}
+.badge-contested{font:500 11px "JetBrains Mono";letter-spacing:.12em;text-transform:uppercase;color:var(--caution);background:rgba(255,176,32,.12);border:1px solid var(--caution);padding:4px 10px;border-radius:999px;display:inline-flex;align-items:center;gap:6px}
+.pulse-dot{width:7px;height:7px;border-radius:50%;background:var(--caution);box-shadow:0 0 8px var(--caution)}
+.subtitle{font:400 13px Inter;color:var(--suit-dim);margin-top:4px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0}
+.pane{background:var(--basalt);border:1px solid var(--ridge);border-radius:8px;padding:20px;position:relative}
+.pane.a{border-top:3px solid var(--rust-hot)}
+.pane.b{border-top:3px solid var(--private)}
+.pane-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.pane-title{font:600 14px Inter;display:flex;align-items:center;gap:8px}
+.badge-crit{font:500 10px "JetBrains Mono";padding:2px 8px;border-radius:4px;text-transform:uppercase}
+.crit-routine{background:rgba(91,227,154,.15);color:var(--nominal);border:1px solid rgba(91,227,154,.3)}
+.crit-alert{background:rgba(255,77,94,.15);color:var(--critical);border:1px solid rgba(255,77,94,.3)}
+.quote{font:italic 400 17px Fraunces,serif;color:var(--haze);margin:14px 0 18px;min-height:50px}
+.meta{font:400 11px "JetBrains Mono";color:var(--suit-mute);display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--ridge);padding-top:12px}
+.btn{background:var(--ridge);border:1px solid var(--dust);color:var(--suit);padding:6px 14px;border-radius:6px;font:500 12px Inter;cursor:pointer}
+.btn-primary{background:var(--rust);border-color:var(--rust-hot);color:#fff}
+.contrast{margin-top:20px;background:var(--basalt);border:1px dashed var(--ridge);border-radius:8px;padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:20px;font-size:13px}
+.contrast dt{font:600 11px "JetBrains Mono";letter-spacing:.1em;text-transform:uppercase;color:var(--suit-mute);margin-bottom:6px}
+.contrast dd{color:var(--suit-dim);line-height:1.5}
+.contrast dd strong{color:var(--caution)}
+.contrast dd em{color:var(--nominal);font-style:normal;font-weight:600}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="header">
+    <div>
+      <div class="title">
+        <span>Waypoint CNC-07</span>
+        <span class="badge-contested"><i class="pulse-dot"></i> Contested (Concurrent Edits)</span>
+      </div>
+      <div class="subtitle">Two crew members filed divergent status reports while Wi-Fi was down. Version vectors identified concurrency.</div>
+    </div>
+    <div style="font:500 12px 'JetBrains Mono';color:var(--telemetry)">Themis VV-Matrix</div>
+  </div>
+
+  <div class="grid">
+    <div class="pane a">
+      <div class="pane-h">
+        <span class="pane-title">🧑‍🔧 Device A (Rover-Alpha)</span>
+        <span class="badge-crit crit-routine">Routine Fix</span>
+      </div>
+      <div class="quote">“CNC-07 running normally after bearing replacement.”</div>
+      <div class="meta">
+        <span>ID: op_a71f8 · VV: {A:1, B:0}</span>
+        <button class="btn">Keep This (A)</button>
+      </div>
+    </div>
+
+    <div class="pane b">
+      <div class="pane-h">
+        <span class="pane-title">🧑‍🔧 Device B (Rover-Beta)</span>
+        <span class="badge-crit crit-alert">Safety Alert</span>
+      </div>
+      <div class="quote">“CNC-07 still vibrating at high RPM; do NOT run above 8000 RPM.”</div>
+      <div class="meta">
+        <span>ID: op_b93e2 · VV: {A:0, B:1}</span>
+        <button class="btn btn-primary">Keep This (B)</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="contrast">
+    <div>
+      <dt>⚠️ Naive Edge Sync (Latest Timestamp Wins)</dt>
+      <dd>Silently overwrites Device B with Device A because Device A's clock was 4 seconds ahead. <strong>Safety warning is completely lost without an audit trail.</strong></dd>
+    </div>
+    <div>
+      <dt>🛡️ Smaran Themis Engine (Version Vectors)</dt>
+      <dd>Recognizes <em>concurrent</em> updates ({A:1, B:0} || {A:0, B:1}). <em>Both reports preserved in Agora</em>, flagged for supervisor sign-off, and historical belief states remain queryable.</dd>
+    </div>
+  </div>
+</div>
+</body>
+</html>
