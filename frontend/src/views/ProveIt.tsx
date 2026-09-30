@@ -121,7 +121,7 @@ function Scoreboard() {
 
 export default function ProveIt() {
   return (
-    <Card title="Prove it">
+    <Card title="Preflight · GO / NO-GO">
       <ul>{CHECKS.map((c) => <CheckRow key={c.id} c={c} />)}</ul>
       <div className="mt-3 border-t border-line pt-3">
         <h3 className="label mb-2">Last benchmark run</h3>

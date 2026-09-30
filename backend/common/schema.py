@@ -8,7 +8,11 @@ from typing import Literal, Optional
 
 from pydantic import BaseModel, Field, model_validator
 
-Kind = Literal["status", "observation", "fix", "personal", "manual"]
+# "status/observation/fix/manual" are the fleet-maintenance kinds (still supported and tested);
+# "personal" forces Krypta. The rest are the personal-companion kinds (backend/companion/).
+Kind = Literal["status", "observation", "fix", "personal", "manual",
+               "decision", "task", "fact", "preference", "event", "note"]
+MemoryType = Literal["episodic", "semantic", "procedural"]
 Residency = Literal["private", "sync", "drop"]
 Status = Literal["current", "superseded", "contested"]
 
@@ -31,18 +35,48 @@ def point_id(op_id: str) -> str:
     return str(uuid.uuid5(_NS, op_id))
 
 
-def entity_key_for(machine: Optional[str], kind: str) -> Optional[str]:
-    """Only status notes describe a single changing fact; everything else is append-only."""
+# Kinds that can name ONE changing fact (a task's state, a meeting time, "the database we use").
+SLOT_KINDS = ("task", "fact", "decision", "preference")
+
+
+def entity_key_for(machine: Optional[str], kind: str, slot: Optional[str] = None) -> Optional[str]:
+    """Only notes that describe a single changing fact get an entity key (and so versions and
+    conflicts); everything else is append-only.
+
+    - fleet: a machine's status  -> "machine:CNC-07/status"
+    - companion: a slot in a subject (project, course...) -> "capstone/decision:database"
+    """
+    if slot and kind in SLOT_KINDS:
+        return f"{machine or 'general'}/{slot}"
     if machine and kind == "status":
         return f"machine:{machine}/status"
     return None
 
 
 class NoteIn(BaseModel):
+    """`machine` is the memory's scope: a machine in the fleet domain, a project/course in the
+    personal domain (`subject` is the friendlier alias for the same field)."""
     text: str = Field(min_length=1, max_length=2000)
     kind: Kind = "observation"
     machine: Optional[str] = None
+    subject: Optional[str] = None
     author: str = ""
+    # ---- companion memory fields (all optional; the fleet domain never sets them) ----
+    memory_type: Optional[MemoryType] = None
+    slot: Optional[str] = None            # names the single changing fact -> entity key
+    importance: Optional[float] = Field(default=None, ge=0, le=1)
+    confidence: Optional[float] = Field(default=None, ge=0, le=1)
+    entities: list[str] = Field(default_factory=list)
+    tags: list[str] = Field(default_factory=list)
+    source: Optional[str] = None          # conversation | agent | import | seed
+    fields: dict = Field(default_factory=dict)   # kind-specific: task status, due date...
+    ts: Optional[float] = None            # backdate (seed data and tests only)
+
+    @model_validator(mode="after")
+    def _scope(self):
+        if self.subject and not self.machine:
+            self.machine = self.subject
+        return self
 
 
 class OnlineIn(BaseModel):

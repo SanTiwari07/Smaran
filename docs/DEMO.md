@@ -1,4 +1,37 @@
-# Demo script
+# Demo script: the companion story (main demo)
+
+One continuous story: *Smaran is an AI that remembers me, keeps working when the internet disappears, acts for me, and catches up intelligently when it returns.* Open **Control center** (`#control`). The **Judge walkthrough** card lists the steps below; each is one click. `python scripts/story.py` runs the same steps with pass/fail checks.
+
+```bash
+.venv/Scripts/python scripts/demo.py start-all --qdrant embedded    # or without --qdrant embedded if Docker is running
+ollama serve                                                        # local model runtime (skip to show the rules fallback)
+.venv/Scripts/python scripts/story.py --runs 3                      # dress rehearsal, every check PASS
+```
+
+| # | Say | Click | Proves |
+|---|---|---|---|
+| 1 | "Day 1: I tell Smaran about my project." | Reset and teach Smaran | Structured memory: decisions, roles, tasks |
+| 2 | "Two weeks pass." | Load two weeks of history | 15 real utterances run through the agent; 2 kept private |
+| 3 | "Day 3: which DB did we choose?" (no shared keywords) | Retrieve naturally | Semantic retrieval + rerank; badge shows *On-device AI* |
+| 4 | "Day 5: I'm in a lecture, no signal." | Disconnect the internet | Both status strips flip to Offline, queue counter appears |
+| 5-6 | "What are my remaining tasks? When is the review?" | Keep using Smaran / Ask something | Local memory + local model, zero network |
+| 7 | "Remind me tomorrow evening to finish the API integration." | Ask the agent to act | Plan, validated tool, verified, audited; queue +1 |
+| 8-9 | "Meanwhile my laptop, also offline, disagrees about the meeting time." | Two devices edit the same fact | Phone says 4 PM, Laptop says 5 PM |
+| 10 | "Wi-Fi is back." | Reconnect | N queued, N uploaded, conflicts detected, nothing overwritten |
+| 11 | "Smaran won't pick for me." | Conflict card | Both versions, why, a suggestion, you decide |
+| 12 | "What never left the phone?" | Show: Privacy | Krypta count, cloud audit 0 private |
+| 13 | "Why not just ChatGPT?" | Show: AI routing, Audit log, Edge benchmark | Route, model, latency, top-k, tools, measured numbers |
+
+Optional: **Take local model away** to show rules-from-memory still answering; the badge changes to *Rules from local memory*.
+
+If asked "is this a real device?": two local processes and a software link switch; see *Real versus simulated* in [ARCHITECTURE.md](ARCHITECTURE.md).
+
+---
+
+# Fleet demo script (engine beats, original domain)
+
+Run with `SMARAN_DOMAIN=fleet SEED_DIR=seed/manuals`.
+
 
 Four live beats plus an optional fifth (the crash), each starting from its own reset so one failure can't cascade into the next. Everything runs on one laptop. "Offline" is a software switch on the dashboard, so no venue Wi-Fi is needed.
 

@@ -26,6 +26,19 @@ Two maintenance technicians report opposite things about machine CNC-07 while th
 - **Fleet knowledge on every device.** A mirror of Qdrant Server (Agora) is kept fresh through a change feed; low-confidence local queries can escalate to the server.
 - **Mission-control dashboard.** Devices and sync, memory and search, conflicts and decisions, a live "Prove it" panel, and an auto-play demo (`?auto`).
 
+## Personal companion: memory that knows why
+
+On top of the edge memory sits a personal companion (`backend/companion/`, architecture in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)). Everything below runs on the device and works with the link off. The behaviours that make it more than retrieval:
+
+- **Decision memory.** A decision is stored with its value, category, reason (in the user's words), the sentence it came from, time, confidence, status and `superseded_by`. "Why did we choose PostgreSQL?" is answered from that record.
+- **Contradiction detection.** "I think we should use MongoDB instead" does not replace the PostgreSQL decision. It is held as a pending contradiction and Smaran asks. *Yes* writes the new decision as the next version, so the old one is marked superseded and kept; *no* drops the statement.
+- **Provenance.** `GET /companion/memory/explain?op_id=` returns the source, time, supporting memories, history and a confidence broken into parts. Confidence is a deterministic rule, not a model's self-rating: settled decision 0.85 or proposal 0.60, +0.05 for a stated reason, +0.03 per supporting memory from the same message (max +0.06), -0.15 while contested, x0.85 stale, x0.60 archived.
+- **Explain this action.** `GET /companion/explain?audit_id=` returns user intent, relevant memory, agent decision, tool and result for any request, including whether the link was off when it ran.
+- **Memory lifecycle.** Temporary, active, stale, archived, decided by type and age (see [lifecycle.py](backend/companion/lifecycle.py)): decisions and preferences persist until superseded, closed tasks decay in days, transient chat in weeks. Archived memory is hidden from recall, never deleted.
+- **Reconciliation with evidence.** When two devices edit the same fact offline, Smaran explains the conflict and, if another memory supports exactly one side, suggests it. Otherwise it says the user decides. It never resolves anything itself.
+
+The auto-play (`?auto`) tells this as five proofs, each a real call to the running devices: **01 Remember** (project context becomes structured memory), **02 Think** (why-question with provenance; a contradiction is held), **03 Act** (network cut; a task is created locally and explained), **04 Reconcile** (two offline devices disagree about a meeting; reconnect; conflict explained), **05 Learn** (the resolved time becomes memory and a follow-up depends on it).
+
 ## How it works
 
 | Component | Role |
@@ -267,6 +280,7 @@ For logs and tracing, see [docs/DEBUGGING.md](docs/DEBUGGING.md).
 | Folder | Contents |
 |---|---|
 | `backend/common/` | Shared by all services: `themis.py` (resolver), `pii.py`, `schema.py`, `vectors.py` (float16 transport), `config.py`, `log.py` |
+| `backend/companion/` | Personal companion: extraction, decision memory and contradictions, provenance, explain, lifecycle, planner, tools, model router |
 | `backend/device/` | Edge device: shards, embeddings, Argus router and classifier, search, outbox and Krypta journal, Hermes sync |
 | `backend/gateway/` | Sync gateway: idempotent ingest, Themis, change feed, audit |
 | `backend/tests/` | pytest: Themis properties, PII, store, float16, retrieval, end-to-end PS3 story, crash recovery |
@@ -290,6 +304,8 @@ For logs and tracing, see [docs/DEBUGGING.md](docs/DEBUGGING.md).
 - Mirror refresh uses the gateway's change feed, not Qdrant partial snapshots.
 - Qdrant Edge keeps recent writes in memory until a flush (1–2 s on the dev laptop), so SQLite is the durable log: the outbox and a local Krypta journal are replayed on start, and Agora is re-pulled after an unclean shutdown.
 - Each Edge shard pre-allocates tens of MB on disk for its write-ahead log and segments.
+
+Companion limitations: extraction is rules-based English, so free-form text yields fewer structured memories; contradiction detection covers technology decisions (same project and category), not preferences or facts; lifecycle windows are fixed constants, not learned; conflict evidence looks for a competing clock time in other memories, not general reasoning; the on-device model (Ollama, llama3.2) may phrase answers loosely, and its answers are checked for citations and completeness only. More in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Roadmap
 
@@ -333,6 +349,6 @@ Built by the team on these open-source projects and models (hackathon rules requ
 | [Mona Sans](https://github.com/github/mona-sans), [Geist Mono](https://github.com/vercel/geist-font) (via Google Fonts) | SIL OFL 1.1 | Dashboard and story typography |
 | [TypeScript](https://www.typescriptlang.org/) | Apache-2.0 | Dashboard |
 
-Design and artwork: the dashboard and story follow the look of qdrant.tech (colours, type, layout patterns), and the Mars-and-astronauts hero art (`story/assets/hero.webp`, `frontend/public/hero.webp`) is cropped from Qdrant's website. It is Qdrant's work, used here for the hackathon demo; this is an independent project, not affiliated with Qdrant, and the art should be replaced before any public deployment. The logo (a summation sign drawn in dots) is ours.
+Design and artwork: the dashboard and story follow the "Red Horizon" Mars design system in [design.md](design.md) (story and vocabulary in [mars-theory.md](mars-theory.md)). All artwork is original and drawn in code (SVG and canvas); the logo files are in [logo/](logo). Fonts (Space Grotesk, Inter, JetBrains Mono, Fraunces) are open-licence and load from Google Fonts, with system fallbacks when offline.
 
 Design references: Qdrant's [Edge synchronization guide](https://qdrant.tech/documentation/edge/edge-synchronization-guide/) (the mutable + mirror shard pattern we extend) and DeCandia et al., *Dynamo* (SOSP 2007), for version vectors. The maintenance notes and manuals in `ml/data/` and `seed/` were written by the team (the training templates are generated by `ml/data/gen_notes.py`); names and phone numbers in them are synthetic.

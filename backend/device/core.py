@@ -21,6 +21,11 @@ from .search import believed_at, local_search
 from .store import Store
 
 
+# payload keys a caller-supplied `fields` dict may never overwrite
+_RESERVED = {"op_id", "entity_key", "vv", "seq", "status", "residency", "decision", "device_id",
+             "valid_from", "known_from", "valid_to", "superseded_by", "text", "kind"}
+
+
 class Device:
     def __init__(self, device_id: str, root: Path, embedder: Embedder, classifier, http=None,
                  log: Log | None = None):
@@ -107,8 +112,8 @@ class Device:
         decision = self.router.decide(note, dense)
         seq = self.db.next_seq()
         op_id = f"{self.id}-{seq:06d}"
-        now = time.time()
-        ek = entity_key_for(note.machine, note.kind) if decision.residency == "sync" else None
+        now = note.ts or time.time()
+        ek = entity_key_for(note.machine, note.kind, note.slot) if decision.residency == "sync" else None
         known = [p["vv"] for _, p in self.store.by_entity(ek)] if ek else []
         payload = {
             "op_id": op_id, "entity_key": ek, "machine": note.machine, "kind": note.kind,
@@ -117,6 +122,10 @@ class Device:
             "valid_from": now, "known_from": now, "valid_to": None, "superseded_by": None,
             "status": "current", "residency": decision.residency, "criticality": decision.criticality,
             "decision": decision.as_dict(),
+            "subject": note.machine, "memory_type": note.memory_type, "slot": note.slot,
+            "importance": note.importance, "confidence": note.confidence, "entities": note.entities,
+            "tags": note.tags, "source": note.source,
+            **{k: v for k, v in note.fields.items() if k not in _RESERVED},
         }
         self.db.add_decision(op_id, note.text, decision.as_dict())
         shard = None
@@ -181,12 +190,12 @@ class Device:
 
     # ---- reads -----------------------------------------------------------------------
     def search(self, q: str, limit: int = 10, at: float | None = None, include_superseded: bool = False,
-               mode: str = "hybrid") -> dict:
+               mode: str = "hybrid", allow_cloud: bool = True) -> dict:
         res = local_search(self.store, self.embedder, q, limit, at, include_superseded, mode=mode)
         res["mode"] = mode
         dq, sq = res.pop("query_vectors")
         res["answered"] = "local"
-        if (at is None and mode == "hybrid" and self.online and self.http is not None
+        if (allow_cloud and at is None and mode == "hybrid" and self.online and self.http is not None
                 and res["top_dense"] < settings.escalate_at):
             try:
                 r = self.http.post("/search", json={"dense": dq, "bm25": sparse_to_json(sq), "limit": limit})

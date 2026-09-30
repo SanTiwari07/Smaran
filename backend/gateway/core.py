@@ -19,6 +19,8 @@ from ..common.vectors import pack, unpack
 from ..device.search import cosine
 from .server import FleetServer, eq, m, vectors_json
 
+RESOLVE_KEEP = ("subject", "memory_type", "slot", "importance", "confidence", "entities", "tags", "title", "task_id", "task_status", "due", "reminder", "when_text",
+                "category", "decision_value", "reason", "evidence", "stance", "request_id", "basis")
 LOCAL_ONLY_FIELDS = ("known_from", "valid_to")   # each replica keeps its own view of time
 
 SCHEMA = """
@@ -140,11 +142,12 @@ class Gateway:
             live = [v for v in versions if v["status"] != themis.SUPERSEDED]
             if not live:
                 raise ValueError(f"no live versions for {entity_key}")
+            base = live[0]
             if keep_op_id:
                 chosen = next((v for v in live if v["op_id"] == keep_op_id), None)
                 if chosen is None:
                     raise ValueError(f"{keep_op_id} is not a live version of {entity_key}")
-                text = chosen["text"]
+                text, base = chosen["text"], chosen
             if not text:
                 raise ValueError("give op_id to keep, or a new text")
             n = self._next("supervisor_seq")
@@ -152,10 +155,15 @@ class Gateway:
             dense, sparse = self.embedder.embed_doc(text)
             now = time.time()
             payload = {
-                "op_id": op_id, "entity_key": entity_key, "machine": live[0].get("machine"), "kind": "status",
+                "op_id": op_id, "entity_key": entity_key, "machine": live[0].get("machine"), "kind": base.get("kind", "status"),
                 "text": text, "device_id": "supervisor", "author": author,
+                # keep what the memory is (subject, type, task fields...) so a resolved task is still a task
+                **{k: v for k, v in base.items() if k in RESOLVE_KEEP},
                 "vv": themis.next_vv([v["vv"] for v in versions], "supervisor", n), "seq": n,
                 "valid_from": now, "residency": "sync", "criticality": max(v.get("criticality", 0) for v in live),
+                "source": "user-confirmed resolution",
+                "resolution": {"mode": "user-confirmed", "by": author, "at": now, "replaced": [v["op_id"] for v in live],
+                               "kept": keep_op_id},
                 "decision": {"by": "supervisor", "residency": "sync", "criticality": 0, "confidence": 1.0,
                              "reason": f"resolved {len(live)} versions" + (f", kept {keep_op_id}" if keep_op_id else "")},
             }
@@ -210,7 +218,7 @@ class Gateway:
                 kind = it.get("kind", "manual")
                 payload = {"op_id": op_id, "entity_key": entity_key_for(it.get("machine"), kind),
                            "machine": it.get("machine"), "kind": kind, "text": it["text"], "device_id": "fleet",
-                           "author": it.get("author", "maintenance-manual"), "vv": {"fleet": i}, "seq": i,
+                           "author": it.get("author", "maintenance-manual"), "vv": {"fleet": i}, "seq": i, "memory_type": "semantic", "subject": it.get("machine"),
                            "valid_from": time.time() - 86400, "residency": "sync", "criticality": it.get("criticality", 0),
                            "decision": {"by": "seed", "residency": "sync", "criticality": 0, "confidence": 1.0,
                                         "reason": "fleet knowledge"}}

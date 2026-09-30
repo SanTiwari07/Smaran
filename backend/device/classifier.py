@@ -72,6 +72,31 @@ class KeywordClassifier:
         return Prediction("sync", 0.4, crit)
 
 
+SENSITIVE = re.compile(r"\b(password|passcode|otp|pin code|cvv|bank|salary|loan|therapy|therapist|diagnos\w*|"
+                       r"medication|prescription|girlfriend|boyfriend|breakup|family issue|my address|"
+                       r"passport|visa number|secret|private)\b", re.I)
+URGENT = re.compile(r"\b(today|tonight|asap|urgent|overdue|deadline|due|exam|submission|submit|viva|demo day)\b", re.I)
+IDLE_CHAT = re.compile(r"^\s*(ok|okay|thanks|thank you|hi|hello|hey|lol|haha|cool|nice|good morning)\W*$", re.I)
+
+
+class PersonalClassifier:
+    """Argus for the personal companion: rules only, no training data needed and always available.
+
+    Sensitive life details (health, money, credentials, relationships) stay in Krypta; bare
+    greetings are dropped; everything else the user wants remembered is worth syncing.
+    Deadlines sync first (criticality 1-2), which is what the outbox sorts on.
+    """
+    name = "personal-rules"
+
+    def predict(self, text: str, dense: list[float] | None = None) -> Prediction:
+        if IDLE_CHAT.match(text):
+            return Prediction("drop", 0.9, 0)
+        crit = 2 if re.search(r"\b(today|tonight|asap|overdue)\b", text, re.I) else 1 if URGENT.search(text) else 0
+        if SENSITIVE.search(text):
+            return Prediction("private", 0.85, crit)
+        return Prediction("sync", 0.8, crit)
+
+
 class LogRegClassifier:
     name = "logreg-bge-small"
 
@@ -90,6 +115,8 @@ class LogRegClassifier:
 
 
 def load_classifier(kind: str = "auto") -> ResidencyClassifier:
+    if kind == "personal" or (kind == "auto" and settings.domain == "personal"):
+        return PersonalClassifier()
     path = settings.path("ml/artifacts/residency.joblib")
     if kind in ("auto", "logreg") and path.exists():
         return LogRegClassifier(path)

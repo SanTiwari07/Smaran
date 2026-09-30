@@ -3,21 +3,22 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Smaran · Built on Qdrant Edge</title>
-<meta name="description" content="A scroll-through of Smaran: offline-first edge memory on Qdrant Edge and Qdrant Server, and how it keeps that memory correct and private when devices disagree.">
+<title>smaran · Remember on Mars</title>
+<meta name="description" content="Remember on Mars. A scroll-through of Smaran: offline-first edge memory on Qdrant Edge and Qdrant Server, and how it keeps memory correct and private when devices are on the surface, out of reach of the relay.">
 <link rel="icon" href="assets/logo.svg" type="image/svg+xml" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Mona+Sans:wght@350;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@1,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<div id="sky" aria-hidden="true"></div>
 
 <nav class="nav">
-  <a class="logo" href="#top"><img class="logo-mark" src="assets/logo.svg" alt="">Smaran</a>
+  <a class="logo" href="#top"><img class="logo-mark" src="assets/logo.svg" alt="">smaran</a>
   <div class="nav-links">
-    <a href="#problem">Problem</a><a href="#shards">Shards</a><a href="#search">Search</a><a href="#argus">Argus</a>
-    <a href="#hermes">Hermes</a><a href="#themis">Themis</a><a href="#server">Qdrant Server</a><a href="#proof">Proof</a>
+    <a href="#problem">Surface</a><a href="#shards">Vault</a><a href="#search">Scanner</a><a href="#argus">Argus</a>
+    <a href="#hermes">Relay pass</a><a href="#themis">Mission control</a><a href="#server">Relay</a><a href="#proof">Proof</a>
   </div>
   <span class="spacer"></span>
   <a class="btn primary sm open-dash" href="/">Open the prototype</a>
@@ -25,52 +26,73 @@
 </nav>
 
 <header class="hero" id="top">
-  <div class="hero-art" aria-hidden="true"></div>
+  <canvas id="stars" aria-hidden="true"></canvas>
+  <span class="moon m1" aria-hidden="true"></span><span class="moon m2" aria-hidden="true"></span>
   <div class="hero-copy">
-    <h1>Memory that <em>doesn't lie.</em></h1>
-    <p class="lede">Offline-first edge memory on Qdrant.</p>
+    <span class="eyebrow">Mission log · Sol 001</span>
+    <h1>Offline isn't a blackout. It's a <em>landing.</em></h1>
+    <p class="lede">Remember on Mars. Smaran keeps a fleet of devices working, private and honest while the relay is out of reach.</p>
     <div class="cta">
-      <a class="btn primary" href="#problem">Scroll the story</a>
+      <a class="btn primary" href="#problem">Start the mission</a>
       <a class="btn ghost open-dash" href="/">Open the prototype</a>
     </div>
   </div>
+  <svg class="hero-astro" viewBox="0 0 200 300" aria-hidden="true">
+    <line x1="150" y1="20" x2="150" y2="285" stroke="#b9afa6" stroke-width="3"/><path d="M150 22h40l-8 14 8 14h-40z" fill="#c1440e"/>
+    <ellipse cx="100" cy="288" rx="60" ry="8" fill="#000" opacity=".3"/>
+    <rect x="52" y="120" width="38" height="66" rx="14" fill="#b9afa6"/><rect x="66" y="110" width="66" height="96" rx="24" fill="#f5f1ea"/>
+    <rect x="86" y="160" width="26" height="14" rx="3" fill="#c1440e"/>
+    <text x="99" y="171" font-size="10" text-anchor="middle" fill="#f5f1ea" font-family="JetBrains Mono" font-weight="500">A</text>
+    <rect x="70" y="200" width="24" height="76" rx="10" fill="#f5f1ea"/><rect x="104" y="200" width="24" height="76" rx="10" fill="#f5f1ea"/>
+    <rect x="66" y="266" width="32" height="16" rx="6" fill="#c1440e"/><rect x="102" y="266" width="32" height="16" rx="6" fill="#c1440e"/>
+    <path d="M124 128Q154 118 152 96" stroke="#f5f1ea" stroke-width="20" stroke-linecap="round" fill="none"/>
+    <circle cx="99" cy="80" r="44" fill="#f5f1ea" stroke="#b9afa6" stroke-width="2"/><rect x="68" y="58" width="62" height="44" rx="22" fill="#1a1216"/>
+    <path d="M72 92Q99 72 126 92" stroke="#e8590c" stroke-width="3" fill="none" opacity=".8"/><circle cx="86" cy="70" r="4" fill="#fff" opacity=".7"/>
+  </svg>
+  <svg class="hero-hz" viewBox="0 0 1440 300" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M0 120 L120 96 L200 118 L330 84 L470 122 L560 100 L700 130 L860 90 L1000 124 L1140 92 L1300 118 L1440 100 V300 H0Z" fill="#5a1f12"/>
+    <path d="M0 170 Q180 120 360 165 T720 160 T1080 150 T1440 165 V300 H0Z" fill="#8a2f12"/>
+    <path d="M0 215 Q220 170 440 210 T900 205 T1440 200 V300 H0Z" fill="#c1440e"/>
+    <path d="M0 255 Q300 225 620 255 T1440 245 V300 H0Z" fill="#7a2a12"/>
+    <g fill="#3a1508"><ellipse cx="180" cy="262" rx="46" ry="16"/><ellipse cx="260" cy="270" rx="26" ry="9"/><ellipse cx="1180" cy="258" rx="60" ry="18"/><ellipse cx="1290" cy="272" rx="30" ry="10"/></g>
+  </svg>
 </header>
 <div class="hero-stats">
-    <div><b>3.0 ms</b><span>offline search, p50</span></div>
-    <div><b>50 / 50</b><span>conflicts caught</span></div>
-    <div><b>85.7%</b><span>bandwidth saved</span></div>
-    <div><b>0</b><span>private records on the server</span></div>
+    <div><b>3.0 ms</b><span>search on the surface, p50</span></div>
+    <div><b>50 / 50</b><span>two-crew conflicts caught</span></div>
+    <div><b>85.7%</b><span>relay bandwidth saved</span></div>
+    <div><b>0</b><span>private records left the vault</span></div>
   </div>
 
 <!-- ======================= 01 PROBLEM ======================= -->
-<section class="chapter" id="problem" style="--gx:15%; --gc:rgba(255,107,129,.13)">
+<section class="chapter" id="problem" style="--gx:15%; --gc:rgba(232,89,12,.13)">
   <div class="chap-head">
-    <span class="eyebrow">01 · The problem</span>
-    <h2>Two technicians. One machine. No Wi-Fi.</h2>
-    <p>Qdrant's own sync guide is a great start: local shard, queue, upload. But it uses wall-clock timestamps to decide what wins. On a factory floor, that is how a safety warning disappears.</p>
+    <span class="eyebrow">01 · Landing, surface mode, two crews</span>
+    <h2>Two crews. One waypoint. No relay in view.</h2>
+    <p>Qdrant's own sync guide is a great start: local shard, queue, upload. But it uses wall-clock timestamps to decide what wins. On a factory floor, or on Mars, that is how a safety warning disappears.</p>
   </div>
   <div class="scrolly" data-chapter="problem">
     <div class="steps">
-      <div class="step"><span class="n">STEP 1</span><h3>The link drops mid-shift</h3><p>Ravi and Meera both carry a tablet running the same edge memory. The factory Wi-Fi goes down. <b>Nothing breaks</b>: search and writes keep working locally, which is exactly what Qdrant Edge is for.</p></div>
+      <div class="step"><span class="n">STEP 1</span><h3>The relay drops out of view</h3><p>Ravi and Meera both carry a tablet running the same edge memory. The factory Wi-Fi goes down and both are now <b>on the surface</b>. Nothing breaks: search and writes keep working locally, which is exactly what Qdrant Edge is for.</p></div>
       <div class="step"><span class="n">STEP 2</span><h3>They write opposite things</h3><p>Ravi notes that CNC-07 runs fine after a belt swap. A little later, Meera notes the spindle is vibrating and the machine should <b>not</b> run. Meera's tablet clock happens to be 9 minutes slow, as real device clocks are.</p></div>
-      <div class="step"><span class="n">STEP 3</span><h3>The link returns. A timestamp decides.</h3><p>A timestamp-based sync compares <span class="mono">10:02</span> with <span class="mono">09:54</span> and keeps the "newer" one. That is the reference pattern in Qdrant's sync guide, and most sync databases.</p></div>
-      <div class="step"><span class="n">STEP 4</span><h3>The warning is silently gone</h3><p>The naive merge keeps "runs fine" and drops the real warning. No error, no log line. <b>Smaran flags both</b>, lets the shift supervisor decide, and keeps the history of what each device believed.</p><span class="tag">50 scripted cases with ±10 min clock skew</span><span class="tag">naive 13/50 · Themis 50/50</span></div>
+      <div class="step"><span class="n">STEP 3</span><h3>The relay rises. A timestamp decides.</h3><p>A timestamp-based sync compares <span class="mono">10:02</span> with <span class="mono">09:54</span> and keeps the "newer" one. That is the reference pattern in Qdrant's sync guide, and most sync databases.</p></div>
+      <div class="step"><span class="n">STEP 4</span><h3>The warning is silently gone</h3><p>The naive merge keeps "runs fine" and drops the real warning. No error, no log line. <b>Smaran flags both</b>, lets mission control (the shift supervisor) decide, and keeps the history of what each device believed.</p><span class="tag">50 scripted cases with ±10 min clock skew</span><span class="tag">naive 13/50 · Themis 50/50</span></div>
     </div>
     <div class="stage-wrap"><div class="stage card" id="stage-problem">
-      <div class="card-h"><span>Factory floor · CNC-07</span><span class="pill" id="p-link">link up</span></div>
+      <div class="card-h"><span>Waypoint · CNC-07</span><span class="pill" id="p-link">relay in view</span></div>
       <div class="card-b col">
         <div class="cols2">
-          <div class="col"><div class="row" style="justify-content:space-between"><b>Device A · Ravi</b><span class="pill ok" data-from="1" id="p-a">online</span></div>
+          <div class="col"><div class="row" style="justify-content:space-between"><b>Rover A · Ravi</b><span class="pill ok" data-from="1" id="p-a">relay in view</span></div>
             <div class="note hide" data-from="2" id="n-a">CNC-07 runs fine after the belt swap.<small>clock 10:02 · written 2nd-last</small></div></div>
-          <div class="col"><div class="row" style="justify-content:space-between"><b>Device B · Meera</b><span class="pill ok" data-from="1" id="p-b">online</span></div>
+          <div class="col"><div class="row" style="justify-content:space-between"><b>Rover B · Meera</b><span class="pill ok" data-from="1" id="p-b">relay in view</span></div>
             <div class="note hide" data-from="2" id="n-b">CNC-07 spindle vibrating. Do NOT run.<small>clock 09:54 (9 min slow) · actually newer</small></div></div>
         </div>
-        <div class="link-bar" id="linkbar"><span>A</span><div class="line"></div><span id="link-t">link up</span><div class="line"></div><span>B</span></div>
+        <div class="link-bar" id="linkbar"><span>A</span><div class="line"></div><span id="link-t">relay in view</span><div class="line"></div><span>B</span></div>
         <div class="cols2">
           <div class="card hide" data-from="3" style="padding:12px"><div class="label hint">NAIVE MERGE · LAST WRITER WINS</div>
             <div class="note win" style="margin-top:8px">CNC-07 runs fine after the belt swap.<small>kept: 10:02 &gt; 09:54</small></div>
             <div class="note hide lost" data-from="4" style="margin-top:8px">Spindle vibrating. Do NOT run.<small>dropped, no warning</small></div></div>
-          <div class="card hide" data-from="4" style="padding:12px;border-color:rgba(255,81,107,.6)"><div class="label hint" style="color:var(--glow)">SMARAN · THEMIS</div>
+          <div class="card hide" data-from="4" style="padding:12px;border-color:rgba(232,89,12,.6)"><div class="label hint" style="color:var(--glow)">SMARAN · THEMIS</div>
             <div class="note contest" style="margin-top:8px">CNC-07 runs fine after the belt swap.<small>status: contested</small></div>
             <div class="note contest" style="margin-top:8px">Spindle vibrating. Do NOT run.<small>status: contested · supervisor decides</small></div></div>
         </div>
@@ -80,9 +102,9 @@
 </section>
 
 <!-- ======================= 02 SHARDS ======================= -->
-<section class="chapter" id="shards" style="--gx:85%; --gc:rgba(47,91,255,.16)">
+<section class="chapter" id="shards" style="--gx:85%; --gc:rgba(193,68,14,.16)">
   <div class="chap-head">
-    <span class="eyebrow">02 · Qdrant Edge</span>
+    <span class="eyebrow">02 · The sealed vault · Qdrant Edge</span>
     <h2>Three shards on every device, three different promises.</h2>
     <p>Qdrant Edge is an embedded, in-process vector store. Smaran opens three <code class="mono">EdgeShard</code>s per device and gives each one a job. Where a memory lives <i>is</i> its privacy policy.</p>
   </div>
@@ -106,9 +128,9 @@
 </section>
 
 <!-- ======================= 03 SEARCH ======================= -->
-<section class="chapter" id="search" style="--gx:20%; --gc:rgba(142,162,255,.14)">
+<section class="chapter" id="search" style="--gx:20%; --gc:rgba(61,224,230,.14)">
   <div class="chap-head">
-    <span class="eyebrow">03 · Hybrid search, offline</span>
+    <span class="eyebrow">03 · The scanner · hybrid search on the surface</span>
     <h2>Meaning and exact words, in about 3 milliseconds.</h2>
     <p>A technician types "CNC-07 bearing noise". A dense vector finds notes that mean the same thing. BM25 finds the exact part number. Smaran fuses both.</p>
   </div>
@@ -140,9 +162,9 @@
 </section>
 
 <!-- ======================= 04 ARGUS ======================= -->
-<section class="chapter" id="argus" style="--gx:80%; --gc:rgba(79,209,161,.10)">
+<section class="chapter" id="argus" style="--gx:80%; --gc:rgba(91,227,154,.10)">
   <div class="chap-head">
-    <span class="eyebrow">04 · Argus · what stays local, what syncs</span>
+    <span class="eyebrow">04 · Argus · what stays sealed, what rides the relay</span>
     <h2>Rules first. A model second. Every decision explains itself.</h2>
     <p>Problem Statement 3 asks the device to <i>dynamically</i> decide what stays local and what syncs. Argus does it in three layers, in a fixed order, and stores the reason next to every memory.</p>
   </div>
@@ -166,9 +188,9 @@
 </section>
 
 <!-- ======================= 05 HERMES ======================= -->
-<section class="chapter" id="hermes" style="--gx:15%; --gc:rgba(245,185,92,.10)">
+<section class="chapter" id="hermes" style="--gx:15%; --gc:rgba(255,176,32,.10)">
   <div class="chap-head">
-    <span class="eyebrow">05 · Hermes · the outbox</span>
+    <span class="eyebrow">05 · Relay pass · Hermes and the manifest</span>
     <h2>Safety-critical first. Crash-safe. Never twice.</h2>
     <p>Links are weak and devices die. Hermes is a SQLite-backed outbox, so a hard kill loses nothing that was acknowledged, and the gateway ignores anything it has seen.</p>
   </div>
@@ -180,7 +202,7 @@
       <div class="step"><span class="n">STEP 4</span><h3>Resend. Zero duplicates.</h3><p>Point ids are <span class="mono">uuid5(op_id)</span>, and the gateway skips any op it has seen. The unacknowledged batch is sent again, and the server ends up with each memory exactly once. In the rehearsal, 3 of 3 ops were resent and <b>0</b> duplicate memories appeared.</p><span class="tag">10 / 10 rehearsals</span><span class="tag">real Qdrant Server v1.19.1</span></div>
     </div>
     <div class="stage-wrap"><div class="stage card" id="stage-hermes">
-      <div class="card-h"><span>Outbox · Device A</span><span class="pill" id="h-link">link down</span></div>
+      <div class="card-h"><span>Manifest · Rover A</span><span class="pill" id="h-link">on the surface</span></div>
       <div class="card-b col">
         <div class="q" id="h-q"></div>
         <div class="gw"><div class="cnt" id="h-srv">0<small>on Qdrant Server</small></div><div class="cnt" id="h-dup" style="text-align:right">0<small>duplicates</small></div></div>
@@ -191,9 +213,9 @@
 </section>
 
 <!-- ======================= 06 THEMIS ======================= -->
-<section class="chapter" id="themis" style="--gx:85%; --gc:rgba(255,107,129,.12)">
+<section class="chapter" id="themis" style="--gx:85%; --gc:rgba(232,89,12,.12)">
   <div class="chap-head">
-    <span class="eyebrow">06 · Themis · deciding what's true</span>
+    <span class="eyebrow">06 · Mission control decides · Themis</span>
     <h2>Version vectors tell <i>newer</i> from <i>concurrent</i>.</h2>
     <p>A clock can lie; a version vector cannot. It counts how many writes from each device a version has seen. That is enough to know whether one report supersedes another, or whether they were written independently and must both be kept.</p>
   </div>
@@ -218,9 +240,9 @@
 </section>
 
 <!-- ======================= 07 SERVER ======================= -->
-<section class="chapter" id="server" style="--gx:20%; --gc:rgba(47,91,255,.16)">
+<section class="chapter" id="server" style="--gx:20%; --gc:rgba(193,68,14,.16)">
   <div class="chap-head">
-    <span class="eyebrow">07 · Edge to Qdrant Server</span>
+    <span class="eyebrow">07 · The orbital relay · Qdrant Server</span>
     <h2>A real server, a real change feed, a lot fewer bytes.</h2>
     <p>The gateway is a thin service in front of Qdrant Server. It resolves conflicts, writes points with <span class="mono">qdrant-client</span>, and hands every device a feed of what changed.</p>
   </div>
@@ -256,9 +278,9 @@
 </section>
 
 <!-- ======================= 08 PROOF ======================= -->
-<section class="chapter" id="proof" style="--gx:50%; --gc:rgba(79,209,161,.10)">
+<section class="chapter" id="proof" style="--gx:50%; --gc:rgba(91,227,154,.10)">
   <div class="chap-head">
-    <span class="eyebrow">08 · Proof</span>
+    <span class="eyebrow">08 · Proof · GO / NO-GO</span>
     <h2>Every claim, measured. Every caveat, stated.</h2>
     <p>Numbers come from <span class="mono">docs/BENCHMARKS.md</span>, generated by <span class="mono">python -m bench.bench</span>. The dashboard's "Prove it" panel re-runs the live checks.</p>
   </div>
@@ -275,7 +297,7 @@
       <div class="card"><h4><span class="pill amber">Read this</span>What these numbers are not</h4><ul>
         <li>Data is <b>synthetic or team-written</b>: 2,000 generated memories, 40 golden queries, 60 hand-written test notes. Treat them as indicative, not as a general benchmark.</li>
         <li>The conflict benchmark uses cases built to break last-writer-wins. It shows Themis is correct, not that real fleets conflict at this rate.</li>
-        <li>Devices are processes on one machine; "offline" is a software link switch.</li></ul></div>
+        <li>Devices are processes on one machine; "on the surface" is a software link switch.</li></ul></div>
       <div class="card"><h4><span class="pill bad">Misses, reported</span>What fell short</h4><ul>
         <li>Selection alone saved <b>38.2%</b> of bandwidth, under the 40% target. Float16 transport did the rest.</li>
         <li>Label agreement (Cohen's κ): residency 1.00, criticality <b>0.66</b>, below our 0.7 target. The second labeller was <b>an AI language model</b>, not a human.</li>
@@ -285,7 +307,7 @@
 </section>
 
 <!-- ======================= 09 QDRANT MAP ======================= -->
-<section class="chapter" id="map" style="--gx:30%; --gc:rgba(142,162,255,.12)">
+<section class="chapter" id="map" style="--gx:30%; --gc:rgba(61,224,230,.12)">
   <div class="chap-head">
     <span class="eyebrow">09 · Qdrant, doing the work</span>
     <h2>Where each Qdrant feature earns its place.</h2>
@@ -310,9 +332,16 @@
 
 <!-- ======================= 10 TRY ======================= -->
 <section class="cta-band" id="try">
-  <span class="eyebrow">10 · The prototype</span>
+  <svg class="cta-hz" viewBox="0 0 1440 300" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M0 120 L120 96 L200 118 L330 84 L470 122 L560 100 L700 130 L860 90 L1000 124 L1140 92 L1300 118 L1440 100 V300 H0Z" fill="#5a1f12"/>
+    <path d="M0 170 Q180 120 360 165 T720 160 T1080 150 T1440 165 V300 H0Z" fill="#8a2f12"/>
+    <path d="M0 215 Q220 170 440 210 T900 205 T1440 200 V300 H0Z" fill="#c1440e"/>
+    <path d="M0 255 Q300 225 620 255 T1440 245 V300 H0Z" fill="#7a2a12"/>
+    <g fill="#3a1508"><ellipse cx="180" cy="262" rx="46" ry="16"/><ellipse cx="260" cy="270" rx="26" ry="9"/><ellipse cx="1180" cy="258" rx="60" ry="18"/><ellipse cx="1290" cy="272" rx="30" ry="10"/></g>
+  </svg>
+  <span class="eyebrow">10 · Your turn · take the mission</span>
   <h2>Now break it yourself.</h2>
-  <p style="color:var(--muted);max-width:56ch;margin:16px auto 0">The Olympus dashboard drives two real device processes, the gateway and Qdrant Server. Cut the link, write conflicting notes, and watch Themis flag them.</p>
+  <p style="color:var(--muted);max-width:56ch;margin:16px auto 0">The mission-control dashboard drives two real device processes, the gateway and Qdrant Server. Send a rover to the surface, write conflicting notes, and watch Themis flag them.</p>
   <div class="cmds"><pre class="code" style="font-size:13.5px">docker compose -f infra/docker-compose.yml up -d
 python scripts/demo.py start-all
 python scripts/demo.py play            <span class="c"># the scripted beats</span>
@@ -322,7 +351,7 @@ cd frontend &amp;&amp; npm run dev             <span class="c"># http://localhos
     <a class="btn ghost" href="https://github.com/SanTiwari07/Smaran">View the code</a>
   </div>
 </section>
-<footer><span>Smaran · Code Cubicle 6.0 · Problem Statement 3 · Built on Qdrant Edge + Qdrant Server</span><span>An independent hackathon project; not affiliated with Qdrant.</span></footer>
+<footer><span>smaran · Remember on Mars · Code Cubicle 6.0 · Problem Statement 3 · Built on Qdrant Edge + Qdrant Server</span><span>An independent hackathon project; not affiliated with Qdrant.</span></footer>
 
 <script src="app.js"></script>
 </body>

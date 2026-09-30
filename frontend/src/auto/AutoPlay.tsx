@@ -1,82 +1,97 @@
-// Self-playing demo: open the dashboard with ?auto (or ?auto=loop) and it plays beats 1-4
-// through the real APIs, with a caption for each step. Same steps and texts as
-// scripts/demo.py, so a recording made this way matches the live demo.
+// Self-playing demo: open the dashboard with ?auto (or ?auto=loop). It tells one story in five
+// proof moments, and every moment is a real call to the running devices and gateway (the same
+// requests a person would type), so nothing on screen is an animation:
+//
+//   01 REMEMBER   teach it project context; it extracts structured memory, with the reason
+//   02 THINK      ask why; it answers from the recorded decision and shows its provenance;
+//                 a contradicting statement is held, not written over the old decision
+//   03 ACT        cut the network; it creates a task locally and explains why
+//   04 RECONCILE  two offline devices edit the same meeting; they reconnect; it explains the conflict
+//   05 LEARN      the resolved truth becomes memory; a follow-up question depends on it
 import { useEffect, useRef, useState } from "react";
-import { api } from "../api/client";
-import type { Kind } from "../api/types";
+import { companion, type ChatResult } from "../api/companion";
 
-type Step = { say: string; tab?: "devices" | "memory" | "conflicts"; device?: string; run?: () => Promise<unknown>; hold?: number };
-type Beat = { title: string; steps: Step[] };
-
-const note = (d: string, text: string, kind: Kind, machine: string | null) =>
-  api.addNote(d, { text, kind, machine, author: `tech-${d}` });
-
-/** Mirrors `demo.py reset`: fresh gateway with the fleet seed, both devices synced, then some links cut. */
-async function resetAll(offline: string[]) {
-  await api.gwReset();
-  for (const d of ["A", "B"]) {
-    await api.devReset(d);
-    await api.syncNow(d);
-  }
-  for (const d of offline) await api.setOnline(d, false);
-}
+type Ctx = { say: (s: string) => void };
+type Step = { say: string; tab?: string; device?: string; run?: (c: Ctx) => Promise<unknown>; hold?: number };
+type Beat = { n: number; title: string; note: string; steps: Step[] };
 
 export const selectDevice = (d: string) => window.dispatchEvent(new CustomEvent("smaran:device", { detail: d }));
-export const runSearch = (q: string) => window.dispatchEvent(new CustomEvent("smaran:search", { detail: q }));
+const stageEvent = (detail: unknown) => window.dispatchEvent(new CustomEvent("smaran:stage", { detail }));
+
+/** Send a message to a device through the real agent loop and hand the result to the Companion view. */
+async function say(device: string, text: string): Promise<ChatResult> {
+  selectDevice(device);
+  const result = await companion.chat(device, text);
+  window.dispatchEvent(new CustomEvent("smaran:turn", { detail: { device, text, result } }));
+  return result;
+}
+
+const sync = async (...ds: string[]) => { for (const d of ds) await companion.syncNow(d).catch(() => null); };
+
+async function reset() {
+  await companion.resetGateway();
+  for (const d of ["A", "B"]) { await companion.resetDevice(d); await companion.syncNow(d).catch(() => null); }
+  await companion.seedBackground("A");         // older material, so the lifecycle has something to show
+  await sync("A", "B", "A");
+}
+
+const TEACH = "I'm building Project Nova. I handle the backend, we're using FastAPI and PostgreSQL, and we chose PostgreSQL because we need relational transactions.";
 
 const BEATS: Beat[] = [
   {
-    title: "Beat 1 · Offline memory",
+    n: 1, title: "REMEMBER", note: "Smaran turns what you say into structured memory: facts, decisions, and the reason behind them.",
     steps: [
-      { say: "Resetting to a known state…", run: () => resetAll(["A"]), hold: 500 },
-      { say: "Device A has lost its link. Everything from here runs on the device.", tab: "devices" },
-      { say: "A technician logs a fix on CNC-07. Argus decides where it lives.", tab: "memory", device: "A",
-        run: () => note("A", "CNC-07 bearing replaced, vibration normal", "fix", "CNC-07") },
-      { say: "Hybrid search, dense + BM25 fused with RRF, answered on the device in milliseconds.",
-        run: async () => runSearch("CNC-07 bearing trouble"), hold: 6000 },
+      { say: "Resetting to a known state…", run: reset, hold: 500, tab: "companion" },
+      { say: "Aarav teaches Smaran about his project. Nothing to fill in: it extracts the structure.", device: "A", run: () => say("A", TEACH), hold: 7000 },
+      { say: "Two more facts: the meeting time, and what the mentor said.", run: async () => {
+        await say("A", "The Project Nova review meeting is at 3 PM.");
+        await say("A", "The mentor said 5 PM suits the whole team because everyone is free by then.");
+        await sync("A", "B", "A");
+      }, hold: 5000 },
     ],
   },
   {
-    title: "Beat 2 · Privacy",
+    n: 2, title: "THINK", note: "Retrieval, then a reasoned answer from the recorded decision, with where it came from.",
     steps: [
-      { say: "A note with a phone number. PII rules run before any model, and no model can override them.",
-        run: () => note("A", "Call Ravi on 9876543210 about the night shift swap", "observation", null) },
-      { say: "It lives in Krypta, which has no sync path. The link comes back, and the Qdrant Server audit still finds 0 private records.",
-        tab: "devices", run: async () => { await api.setOnline("A", true); await api.syncNow("A"); }, hold: 6000 },
+      { say: "Later: why did we choose PostgreSQL? Answered from the recorded decision, with its provenance.", run: () => say("A", "Why did we choose PostgreSQL?"), hold: 9000 },
+      { say: "Someone proposes MongoDB. Smaran does not silently replace the decision; it detects the contradiction.", run: () => say("A", "I think we should use MongoDB instead."), hold: 8000 },
+      { say: "The answer is no. The old decision stands and nothing was overwritten.", run: () => say("A", "No, keep PostgreSQL"), hold: 5000 },
     ],
   },
   {
-    title: "Beat 3 · Conflict",
+    n: 3, title: "ACT", note: "The network is off. Memory, planning and the action all run on the device.",
     steps: [
-      { say: "Both devices offline. Two technicians are about to disagree about CNC-07.", run: () => resetAll(["A", "B"]), tab: "devices" },
-      { say: "Device A: running normally.", tab: "memory", device: "A",
-        run: () => note("A", "CNC-07 running normally after bearing replacement, vibration normal", "status", "CNC-07") },
-      { say: "Device B: still vibrating. And a safety-critical smoke report.", device: "B",
-        run: async () => {
-          await note("B", "CNC-07 still vibrating at high RPM, do not run above 8000 rpm", "status", "CNC-07");
-          await note("B", "PRESS-02 smoke from the motor, pressed e-stop", "observation", "PRESS-02");
-        } },
-      { say: "The safety-critical note is first in B's outbox.", tab: "devices" },
-      { say: "Links restored. Themis compares version vectors: neither report saw the other, so both are contested.",
-        run: async () => {
-          await api.setOnline("A", true); await api.setOnline("B", true);
-          await api.syncNow("A"); await api.syncNow("B"); await api.syncNow("A");
-        } },
-      { say: "Both reports side by side. A latest-timestamp merge would have silently dropped one.", tab: "conflicts", hold: 9000 },
+      { say: "Cutting the network on both devices. Everything from here runs locally.", run: async () => { await companion.setOnline("A", false); await companion.setOnline("B", false); }, hold: 2500 },
+      { say: "An action, offline: it retrieves project context, runs the tool locally and can explain why.", run: () => say("A", "Create a task to finish the authentication API tonight."), hold: 11000 },
     ],
   },
   {
-    title: "Beat 4 · Belief over time",
+    n: 4, title: "RECONCILE", note: "Both devices edited the same meeting while they could not see each other.",
     steps: [
-      { say: "The shift supervisor keeps device B's report.",
-        run: async () => {
-          const g = (await api.gwContested())[0];
-          const keep = g?.versions.find((v) => v.device_id === "B");
-          if (g && keep) await api.gwResolve(g.entity_key, keep.op_id);
-          await api.syncNow("A"); await api.syncNow("B");
-        } },
-      { say: "The offline reports are superseded, not deleted. Drag Chronos back to see what device A believed before.",
-        tab: "memory", device: "A", hold: 9000 },
+      { say: "The phone moves the meeting to 4 PM, offline.", run: () => say("A", "The Project Nova review meeting is now at 4 PM."), hold: 4000 },
+      { say: "The laptop moves it to 5 PM, also offline.", device: "B", run: () => say("B", "The Project Nova review meeting is now at 5 PM."), hold: 4000 },
+      { say: "Reconnecting. Version vectors show neither edit saw the other, so both are kept and flagged.", run: async () => {
+        await companion.setOnline("A", true); await companion.setOnline("B", true);
+        await sync("A", "B", "A", "B");
+      }, hold: 3000 },
+      { say: "Smaran explains the conflict and checks memory for evidence. It suggests; you decide.", device: "A", hold: 11000 },
+      { say: "You accept the suggestion that memory supports.", run: async () => {
+        const cf = (await companion.conflicts("A"))[0];
+        if (cf) await companion.resolve(cf.entity_key, cf.suggestion.op_id);
+        await sync("A", "B", "A", "B");
+      }, hold: 3000 },
+    ],
+  },
+  {
+    n: 5, title: "LEARN", note: "The resolved truth is now memory, and the next question depends on it.",
+    steps: [
+      { say: "The laptop is asked about the meeting. The answer comes from the user-confirmed resolution.", device: "B", run: () => say("B", "When is the Project Nova review meeting?"), hold: 9000 },
+      { say: "Another question that depends on what was just learned: the task from the phone, before that meeting.", device: "A", run: () => say("A", "What do I still need to do before the Project Nova review meeting?"), hold: 7000 },
+      { say: "It also knows what to let go: old chat and closed tasks are archived, not deleted.", run: async (c) => {
+        const lifecycle = await companion.lifecycle("A");
+        stageEvent({ n: 5, id: "learn", title: "LEARN", note: "Smaran does not remember everything forever. It remembers what matters.", lifecycle });
+        c.say("Done. Reload the page to play again.");
+      }, hold: 9000 },
     ],
   },
 ];
@@ -105,13 +120,15 @@ export default function AutoPlay({ mode }: { mode: "once" | "loop" }) {
       do {
         let i = 0;
         for (const beat of BEATS) {
+          stageEvent({ n: beat.n, id: beat.title.toLowerCase(), title: beat.title, note: beat.note });
           for (const s of beat.steps) {
             if (stop.current || cancelled) return;
             i += 1;
-            setWhere({ beat: beat.title, say: s.say, i, total });
+            const label = `0${beat.n} ${beat.title}`;
+            setWhere({ beat: label, say: s.say, i, total });
             if (s.tab) window.location.hash = `#${s.tab}`;
             if (s.device) selectDevice(s.device);
-            try { if (s.run) await s.run(); }
+            try { if (s.run) await s.run({ say: (t) => setWhere((w) => w && { ...w, say: t }) }); }
             catch (e) { setErr(e instanceof Error ? e.message : String(e)); return; }
             await sleep(s.hold ?? STEP_MS);
           }
@@ -124,7 +141,7 @@ export default function AutoPlay({ mode }: { mode: "once" | "loop" }) {
 
   if (stopped) return null;
   return (
-    <div role="status" aria-live="polite" className="sticky top-0 z-10 border-b border-line bg-[#161e33] text-ink">
+    <div role="status" aria-live="polite" className="sticky top-0 z-30 border-b border-line bg-[var(--basalt)] text-ink">
       <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-2">
         <span className="label shrink-0 text-muted">{where?.beat ?? "Auto demo"}</span>
         <span className="min-w-0 flex-1 text-sm">{err ? `Stopped: ${err}` : where?.say ?? "Starting…"}</span>

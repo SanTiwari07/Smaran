@@ -60,13 +60,13 @@
     const down = i >= 1 && i <= 2;
     const lb = $("#linkbar");
     lb.className = "link-bar " + (i === 0 ? "" : down ? "down" : "up");
-    $("#link-t").textContent = i === 0 ? "link up" : down ? "link down" : "link back · syncing by timestamp";
+    $("#link-t").textContent = i === 0 ? "relay in view" : down ? "on the surface" : "relay rises · syncing by timestamp";
     const pl = $("#p-link");
-    pl.textContent = i === 0 || i >= 3 ? "link up" : "link down";
-    pl.className = "pill " + (down ? "bad" : "ok");
+    pl.textContent = i === 0 || i >= 3 ? "relay in view" : "on the surface";
+    pl.className = "pill " + (down ? "surface" : "ok");
     ["#p-a", "#p-b"].forEach((id) => {
       const p = $(id);
-      p.textContent = down ? "offline · working" : "online";
+      p.textContent = down ? "on the surface · working" : "relay in view";
       p.className = "pill " + (down ? "amber" : "ok");
     });
   };
@@ -98,7 +98,7 @@ shard.<span class="f">update</span>(UpdateOperation.<span class="f">set_payload<
   handlers.search = (i) => {
     $("#m1").style.width = i >= 4 ? "15.2%" : "0";
     const l = $("#s-lat");
-    l.textContent = i >= 4 ? "3.04 ms p50" : "offline";
+    l.textContent = i >= 4 ? "3.04 ms p50" : "on the surface";
     l.className = "pill " + (i >= 4 ? "ok" : "");
   };
 
@@ -210,8 +210,8 @@ shard.<span class="f">update</span>(UpdateOperation.<span class="f">set_payload<
       return `<div class="item ${cls}"><span class="pill ${CRITCLS[n.c]}" style="min-width:24px;justify-content:center">${n.c}</span><span>${n.t}</span>${tail}</div>`;
     }).join("");
     const link = $("#h-link");
-    link.textContent = i <= 1 ? "link down" : i === 3 ? "device killed" : "link up";
-    link.className = "pill " + (i <= 1 ? "bad" : i === 3 ? "bad" : "ok");
+    link.textContent = i <= 1 ? "on the surface" : i === 3 ? "rover killed" : "relay pass";
+    link.className = "pill " + (i <= 1 ? "surface" : i === 3 ? "bad" : "ok");
     $("#h-srv").innerHTML = (i >= 3 ? 5 : i >= 2 ? 3 : 0) + "<small>on Qdrant Server</small>";
     $("#h-dup").innerHTML = "0<small>duplicates</small>";
     $("#h-note").textContent = [
@@ -294,4 +294,45 @@ shard.<span class="f">update</span>(UpdateOperation.<span class="f">set_payload<
     $$(".track > span", stage).forEach((s) => (s.style.width = i >= 4 ? s.dataset.w + "%" : "0"));
     $("#srv-code").classList.toggle("hide", i >= 4 && innerWidth < 900);
   };
+
+  /* ---------- starfield in the hero ---------- */
+  (() => {
+    const cv = $("#stars"), cx = cv && cv.getContext("2d");
+    if (!cx) return;
+    const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let S = [];
+    const size = () => {
+      cv.width = cv.clientWidth; cv.height = cv.clientHeight;
+      S = Array.from({ length: 140 }, () => ({ x: Math.random() * cv.width, y: Math.random() * cv.height * .7, r: Math.random() * 1.3 + .3, p: Math.random() * 6, d: Math.random() }));
+    };
+    size(); addEventListener("resize", size);
+    const draw = () => {
+      cx.clearRect(0, 0, cv.width, cv.height);
+      const t = still ? 0 : Date.now() / 1000;
+      for (const s of S) {
+        const x = (((s.x - t * 3 * s.d) % cv.width) + cv.width) % cv.width;
+        cx.globalAlpha = (.3 + .45 * Math.abs(Math.sin(t * .8 + s.p))) * (1 - s.y / (cv.height * .85));
+        cx.fillStyle = "#f5f1ea"; cx.beginPath(); cx.arc(x, s.y, s.r, 0, 7); cx.fill();
+      }
+      if (!still) requestAnimationFrame(draw);
+    };
+    draw();
+  })();
+
+  /* ---------- the sky shifts with the mission stage: dusk, dust haze, dawn, clear, daylight ---------- */
+  (() => {
+    const sky = $("#sky");
+    const tints = { top: "#2a1116", problem: "#3a1a12", shards: "#241018", search: "#1a1220", argus: "#241018", hermes: "#4a2214", themis: "#3a2a1a", server: "#2a1a20", proof: "#1f3324", map: "#2a1116", try: "#4a2214" };
+    const ids = Object.keys(tints).filter((k) => k !== "top");
+    const pick = () => {
+      let cur = "top";
+      for (const id of ids) {
+        const el = document.getElementById(id);
+        if (el && el.getBoundingClientRect().top < innerHeight * .5) cur = id;
+      }
+      sky.style.setProperty("--tint", tints[cur]);
+    };
+    addEventListener("scroll", pick, { passive: true });
+    pick();
+  })();
 })();

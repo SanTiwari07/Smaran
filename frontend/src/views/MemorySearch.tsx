@@ -150,7 +150,7 @@ function Chronos({ device }: { device: string }) {
             <li key={b.entity_key} className="border-t border-line py-2.5">
               <div className="mb-1 flex items-center gap-2">
                 <span className="font-mono text-xs">{b.entity_key}</span>
-                <Badge tone={b.status === "current" ? "neutral" : "alert"}>{b.status === "current" ? "one belief" : "contested"}</Badge>
+                <Badge tone={b.status === "current" ? "neutral" : "gold"}>{b.status === "current" ? "one belief" : "contested"}</Badge>
               </div>
               {b.versions.map((v) => (
                 <p key={v.op_id} className="text-sm">

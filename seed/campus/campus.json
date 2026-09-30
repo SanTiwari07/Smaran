@@ -1,0 +1,10 @@
+[
+  {"text": "DBMS Assignment 3 (normalization and SQL joins) is due on 12 Oct at 11:59 PM. Submit on the college portal.", "kind": "manual", "machine": "dbms", "author": "college-portal"},
+  {"text": "Capstone mid-review is on 14 Oct at 10:00 AM in Room 204, panel of three faculty members.", "kind": "manual", "machine": "capstone", "author": "college-portal"},
+  {"text": "Operating Systems lab record must be signed by Prof. Mehta before the internal exam on 20 Oct.", "kind": "manual", "machine": "os", "author": "college-portal"},
+  {"text": "Central library is open until 8 PM on weekdays and has quiet study rooms that can be booked online.", "kind": "manual", "machine": "campus", "author": "college-portal"},
+  {"text": "Hackathon registration closes on 5 Oct. Teams may have up to four members.", "kind": "manual", "machine": "hackathon", "author": "college-portal"},
+  {"text": "Machine Learning course: quiz 2 covers gradient descent, regularization and cross-validation.", "kind": "manual", "machine": "ml-course", "author": "college-portal"},
+  {"text": "Placement cell workshop on resume writing is on 9 Oct at 3 PM in the seminar hall.", "kind": "manual", "machine": "campus", "author": "college-portal"},
+  {"text": "Semester exam timetable was published; the DBMS paper is on 27 Oct and the OS paper on 30 Oct.", "kind": "manual", "machine": "campus", "author": "college-portal"}
+]

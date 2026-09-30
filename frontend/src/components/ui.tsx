@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import type { Decision, Shard, Status } from "../api/types";
+import { Helmet } from "./scenery";
 
 export function Card({ title, right, children, className = "" }: {
   title?: ReactNode; right?: ReactNode; children: ReactNode; className?: string;
@@ -17,37 +18,45 @@ export function Card({ title, right, children, className = "" }: {
   );
 }
 
+// Instrument colours only: live (relay in view), ok (nominal), gold (caution / contested / needs a human),
+// vault (private), surface (offline: a place, not an error), alert (a real failure or safety-critical).
 const TONES = {
   neutral: "text-muted border-line bg-white/[0.03]",
   alert: "text-alert border-alert/40 bg-alert/10",
   ok: "text-ok border-ok/40 bg-ok/10",
   gold: "text-gold border-gold/40 bg-gold/10",
+  live: "text-live border-live/40 bg-live/10",
+  vault: "text-vault border-vault/40 bg-vault/10",
+  surface: "text-surface border-surface/40 bg-surface/10",
 } as const;
 export type Tone = keyof typeof TONES;
 
 export function Badge({ tone = "neutral", children, title }: { tone?: Tone; children: ReactNode; title?: string }) {
   return (
     <span title={title}
-      className={`inline-flex shrink-0 items-center gap-1 rounded border px-1.5 py-px text-[11px] font-semibold uppercase leading-4 tracking-wide ${TONES[tone]}`}>
+      className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-px font-mono text-[11px] font-medium uppercase leading-4 tracking-[0.1em] ${TONES[tone]}`}>
       {children}
     </span>
   );
 }
 
-/** A coloured dot and a word, for states that change (online, offline). */
+/** A coloured dot and a word, for states that change. A hollow dot means "on the surface" (offline). */
 export function Indicator({ tone, children }: { tone: Tone; children: ReactNode }) {
-  const dot = { neutral: "bg-faint", alert: "bg-alert", ok: "bg-ok", gold: "bg-gold" }[tone];
+  const dot = {
+    neutral: "bg-faint", alert: "bg-alert", ok: "bg-ok", gold: "bg-gold", live: "bg-live pulse-dot",
+    vault: "bg-vault", surface: "border-[1.5px] border-current",
+  }[tone];
   return (
-    <span className={`inline-flex items-center gap-1.5 whitespace-nowrap text-xs font-medium ${TONES[tone].split(" ")[0]}`}>
-      <span className={`h-1.5 w-1.5 rounded-full ${dot}`} />{children}
+    <span className={`inline-flex items-center gap-1.5 whitespace-nowrap font-mono text-[11px] font-medium uppercase tracking-[0.1em] ${TONES[tone].split(" ")[0]}`}>
+      <span className={`h-[7px] w-[7px] rounded-full ${dot}`} />{children}
     </span>
   );
 }
 
 export const SHARD_META: Record<Shard, { name: string; tone: Tone; hint: string }> = {
-  krypta: { name: "Krypta", tone: "gold", hint: "Private shard: never leaves the device" },
-  hermes: { name: "Hermes", tone: "neutral", hint: "Mutable shard: waiting to sync" },
-  agora: { name: "Agora", tone: "neutral", hint: "Mirror shard: fleet knowledge" },
+  krypta: { name: "Krypta", tone: "vault", hint: "Sealed vault: never leaves the device" },
+  hermes: { name: "Hermes", tone: "neutral", hint: "Manifest: waits for the next relay pass" },
+  agora: { name: "Agora", tone: "neutral", hint: "Colony hub: what the whole fleet knows" },
   cloud: { name: "Cloud", tone: "neutral", hint: "Answered by Qdrant Server (escalated)" },
 };
 
@@ -57,7 +66,7 @@ export function ShardBadge({ shard }: { shard: Shard }) {
 }
 
 export function StatusBadge({ status }: { status: Status }) {
-  return <Badge tone={status === "contested" ? "alert" : "neutral"}>{status}</Badge>;
+  return <Badge tone={status === "contested" ? "gold" : "neutral"}>{status}</Badge>;
 }
 
 export function CritBadge({ level }: { level: number }) {
@@ -85,7 +94,7 @@ export function Button({ children, onClick, variant = "primary", disabled, type 
 export function Stat({ label, value, hint, tone }: { label: string; value: ReactNode; hint?: string; tone?: "alert" }) {
   return (
     <div title={hint} className="tile">
-      <div className={`num font-mono text-2xl font-medium leading-tight ${tone === "alert" ? "text-alert" : ""}`}>{value}</div>
+      <div className={`num font-mono text-2xl font-medium leading-tight ${tone === "alert" ? "text-gold" : ""}`}>{value}</div>
       <div className="label mt-1 tracking-[0.04em]">{label}</div>
     </div>
   );
@@ -102,7 +111,7 @@ export function Group({ title, children }: { title: string; children: ReactNode 
   return (
     <div>
       <div className="mb-2 flex items-center gap-2">
-        <span className="h-1.5 w-1.5 rotate-45" style={{ background: "var(--brand)" }} />
+        <span className="h-1.5 w-1.5 rotate-45" style={{ background: "var(--rust-hot)" }} />
         <h3 className="label text-ink">{title}</h3>
         <span className="h-px flex-1 bg-line" />
       </div>
@@ -111,41 +120,22 @@ export function Group({ title, children }: { title: string; children: ReactNode 
   );
 }
 
-const PIX: Record<string, string> = { h: "#e3e9ff", s: "#98a8dc", v: "#0e1530", r: "#dc244c", o: "#f5993c", g: "#4fd1a1", c: "#5d6886" };
-const SUIT = [
-  "....hhhhhh....",
-  "..hhhhhhhhhh..",
-  ".hhhvvvvvvhhs.",
-  ".hhvvrrvvvvhs.",
-  ".hhvvrvvvvvhs.",
-  ".hhvvvvvvvvhs.",
-  ".hhhvvvvvvhhs.",
-  "..hhhhhhhhhs..",
-  ".hhhhhhhhhhss.",
-  "hhhhhccchhhhss",
-  "hhhhhcgchhhhss",
-  "hhhhhhhhhhhhss",
-  ".hhhhhhhhhhss.",
-  "..hhhh..hhhs..",
-  "..hhhh..hhhs..",
-  "..ooo...ooo...",
-];
-/** A pixel-art astronaut: one per device. `stripe` recolours the boots and chest light. */
+/** The crew helmet: one per device. The visor is cyan with the relay in view, dust when on the surface. */
 export function Astronaut({ online = true, size = 44, stripe }: { online?: boolean; size?: number; stripe?: string }) {
-  const light = online ? PIX.g : PIX.r;
-  return (
-    <svg viewBox="0 0 14 16" width={size} height={(size * 16) / 14} className="pix shrink-0" aria-hidden="true">
-      {SUIT.flatMap((row, y) => [...row].map((ch, x) => {
-        if (ch === ".") return null;
-        const fill = ch === "g" ? light : ch === "o" ? (stripe ?? PIX.o) : PIX[ch];
-        return <rect key={`${x}-${y}`} x={x} y={y} width="1.02" height="1.02" fill={fill} />;
-      }))}
-    </svg>
-  );
+  return <Helmet size={size} visor={online ? "#3de0e6" : "#d9a066"} patch={stripe} />;
 }
 
 export function Empty({ children }: { children: ReactNode }) {
-  return <p className="py-6 text-sm text-muted">{children}</p>;
+  return (
+    <div className="flex items-center gap-4 py-6">
+      <svg viewBox="0 0 64 40" width="64" height="40" aria-hidden="true" className="shrink-0">
+        <path d="M0 34Q16 28 32 33T64 31V40H0Z" fill="#7a2a12" />
+        <line x1="40" y1="8" x2="40" y2="33" stroke="#b9afa6" strokeWidth="1.5" />
+        <path d="M40 9h11l-3 4 3 4H40z" fill="#c1440e" />
+      </svg>
+      <p className="text-sm text-muted">{children}</p>
+    </div>
+  );
 }
 
 export function ErrorNote({ error }: { error: string | null }) {

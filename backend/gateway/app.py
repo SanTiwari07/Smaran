@@ -72,11 +72,11 @@ def create_app(gw: Gateway) -> FastAPI:
     @app.post("/admin/reset")
     def reset(seed: bool = True):
         gw.reset()
-        n = gw.seed(settings.path("seed/manuals")) if seed else 0
+        n = gw.seed(settings.path(settings.seed_dir)) if seed else 0
         return {"ok": True, "seeded": n}
 
     @app.post("/admin/seed")
     def seed():
-        return {"seeded": gw.seed(settings.path("seed/manuals"))}
+        return {"seeded": gw.seed(settings.path(settings.seed_dir))}
 
     return app

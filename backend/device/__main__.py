@@ -5,6 +5,7 @@
 """
 import argparse
 import os
+import threading
 
 os.environ.setdefault("HF_HUB_OFFLINE", "1")   # the device never needs the internet
 
@@ -25,7 +26,7 @@ def main() -> None:
     ap.add_argument("--id", required=True)
     ap.add_argument("--port", type=int)
     ap.add_argument("--embedder", default="fastembed", choices=["fastembed", "hash"])
-    ap.add_argument("--classifier", default="auto", choices=["auto", "logreg", "rules"])
+    ap.add_argument("--classifier", default="auto", choices=["auto", "logreg", "rules", "personal"])
     args = ap.parse_args()
 
     port = args.port or settings.device_ports.get(args.id, 8000 + ord(args.id[0]) - 64)
@@ -34,7 +35,17 @@ def main() -> None:
     device = Device(args.id, settings.path(settings.runtime_dir) / f"device-{args.id}",
                     get_embedder(args.embedder), load_classifier(args.classifier), http=http, log=log)
     log("start", port=port, gateway=settings.gateway_url, classifier=device.classifier.name)
-    uvicorn.run(create_app(device, Hermes(device)), host="127.0.0.1", port=port, log_level="warning")
+    app = create_app(device, Hermes(device))
+    companion = app.state.companion
+
+    def warm():          # load the local model into memory now, so the first question isn't slow
+        try:
+            if companion.router.local.available():
+                log("slm_warm", model=companion.router.local.model, ms=companion.router.local.warm())
+        except Exception as e:  # noqa: BLE001
+            log.error("slm_warm_failed", error=str(e))
+    threading.Thread(target=warm, daemon=True).start()
+    uvicorn.run(app, host="127.0.0.1", port=port, log_level="warning")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,105 @@
+{
+ "machine": {
+  "os": "Windows-11-10.0.26200-SP0",
+  "python": "3.14.2",
+  "cpu_threads": 12
+ },
+ "measured_at": "2026-09-30 07:53",
+ "embedder": "bge-small-en-v1.5 (ONNX, CPU)",
+ "embedder_load_ms": 310,
+ "rss_after_embedder_mb": 278.0,
+ "embed_query_ms": {
+  "p50": 4.44,
+  "p95": 5.2,
+  "n": 100
+ },
+ "embed_doc_ms": {
+  "p50": 4.45,
+  "p95": 5.39,
+  "n": 100
+ },
+ "retrieval_by_size": {
+  "100": {
+   "p50": 8.14,
+   "p95": 9.29,
+   "n": 60,
+   "disk_mb": 622.1
+  },
+  "1000": {
+   "p50": 8.68,
+   "p95": 9.93,
+   "n": 60,
+   "disk_mb": 626.8
+  },
+  "3000": {
+   "p50": 8.78,
+   "p95": 31.0,
+   "n": 60,
+   "disk_mb": 635.7
+  }
+ },
+ "offline_startup_small": {
+  "open_ms": 3213,
+  "to_first_answer_ms": 3234,
+  "memories": 100,
+  "network": "none (http client is None)"
+ },
+ "agent_ms": {
+  "create_task_with_verify": {
+   "p50": 161.97,
+   "p95": 189.35,
+   "n": 30
+  },
+  "list_tasks": {
+   "p50": 7.63,
+   "p95": 15.71,
+   "n": 30
+  },
+  "chat_remember_end_to_end": {
+   "p50": 219.44,
+   "p95": 247.28,
+   "n": 20
+  },
+  "chat_ask_rules_end_to_end": {
+   "p50": 383.39,
+   "p95": 433.84,
+   "n": 20
+  }
+ },
+ "sync": {
+  "queued_ops": 3148,
+  "push_ms": 35371,
+  "sent": 3148,
+  "note": "in-process HTTP routes to an embedded gateway; excludes real network latency",
+  "pull_ms": 20535,
+  "pulled": 3156,
+  "replay_ms": 8324,
+  "replay_results": {
+   "duplicate": 3148
+  }
+ },
+ "disk_mb_final": 1281.3,
+ "memories_final": 3158,
+ "offline_startup": {
+  "open_ms": 4284,
+  "to_first_answer_ms": 4730,
+  "memories": 3158,
+  "network": "none (http client is None)"
+ },
+ "local_slm": {
+  "model": "llama3.2:latest",
+  "runtime": "Ollama (llama.cpp)",
+  "load_ms": 602,
+  "answered_by_slm": "5/6",
+  "e2e_question_ms": {
+   "p50": 1652,
+   "p95": 1772,
+   "n": 5
+  },
+  "fell_back_to_rules": [
+   "what tasks are left for the project"
+  ]
+ },
+ "rss_end_mb": 384.0,
+ "rss_start_mb": 147.0
+}

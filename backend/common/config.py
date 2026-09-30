@@ -40,6 +40,18 @@ class Settings:
     sync_batch: int = int(_env("SYNC_BATCH", "20"))
     # How dense vectors travel on the wire: "f16" (base64 float16, ~8x smaller) or "json" floats.
     vector_transport: str = _env("VECTOR_TRANSPORT", "f16")
+    # ---- companion (personal assistant layer) ----
+    # Local small language model, served by Ollama (llama.cpp) on this machine.
+    local_llm_url: str = _env("LOCAL_LLM_URL", "http://127.0.0.1:11434")
+    local_llm_model: str = _env("LOCAL_LLM_MODEL", "llama3.2:latest")
+    # Optional cloud enhancement: any OpenAI-compatible endpoint. Empty = not configured.
+    cloud_llm_url: str = _env("CLOUD_LLM_URL", "")
+    cloud_llm_key: str = _env("CLOUD_LLM_KEY", "")
+    cloud_llm_model: str = _env("CLOUD_LLM_MODEL", "")
+    # Which knowledge the gateway seeds into the fleet collection ("campus" or "manuals")
+    # "personal" (student/developer companion) or "fleet" (the original maintenance-notes domain)
+    domain: str = _env("SMARAN_DOMAIN", "personal")
+    seed_dir: str = _env("SEED_DIR", "seed/campus")
 
     def path(self, rel: str) -> Path:
         p = Path(rel)
@@ -49,3 +61,6 @@ class Settings:
 settings = Settings()
 
 MACHINES = ["CNC-07", "CNC-12", "LATHE-03", "PRESS-02", "ROBOT-ARM-5"]
+
+# How the dashboard names the demo devices in the personal story.
+DEVICE_LABELS = {"A": "Phone", "B": "Laptop"}

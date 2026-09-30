@@ -2,6 +2,7 @@ import { useState } from "react";
 import { api } from "../api/client";
 import type { ContestedGroup, Memory } from "../api/types";
 import {
+  Astronaut,
   Badge, Button, Card, clock, CritBadge, Empty, ErrorNote, inputCls, vvText,
 } from "../components/ui";
 import { usePoll } from "../hooks/usePoll";
@@ -24,23 +25,23 @@ function ConflictGroup({ g, onResolved }: { g: ContestedGroup; onResolved: () =>
   };
 
   return (
-    <div className="border-l-2 border-alert pl-4">
+    <div className="border-l-2 border-gold pl-4">
       <div className="mb-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        <span className="font-mono text-sm">{g.entity_key}</span>
-        <span className="text-xs text-muted">{g.versions.length} versions written independently offline</span>
+        <span className="flex items-center gap-2 font-mono text-sm"><span aria-hidden="true" className="waypoint-pin inline-block h-3 w-3 rotate-45 rounded-[2px] bg-gold" />Waypoint {g.entity_key}</span>
+        <span className="text-xs text-muted">{g.versions.length} versions written by crews out of contact: two crews, one waypoint</span>
       </div>
       <div className="grid gap-px border border-line bg-line md:grid-cols-2">
         {g.versions.map((v) => (
           <div key={v.op_id} className="flex flex-col bg-panel p-3">
             <div className="mb-2 flex flex-wrap items-center gap-2">
-              <span className="text-sm font-medium">Device {v.device_id}</span>
+              <span className="flex items-center gap-2 text-sm font-medium"><Astronaut size={26} online={false} stripe={v.device_id === "A" ? "#e8590c" : "#b79cff"} />Rover {v.device_id}</span>
               <CritBadge level={v.criticality} />
               <span className="num ml-auto font-mono text-xs text-faint">{clock(v.valid_from)}</span>
             </div>
             <p className="mb-3 flex-1 text-sm">{v.text}</p>
             <div className="flex items-center justify-between gap-2">
               <span className="font-mono text-[11px] text-faint">{v.op_id} / vv {vvText(v.vv)}</span>
-              <Button variant="secondary" disabled={busy} onClick={() => resolve(v.op_id)}>Keep this</Button>
+              <Button variant="secondary" disabled={busy} onClick={() => resolve(v.op_id)}>Mission control keeps this</Button>
             </div>
           </div>
         ))}
@@ -108,11 +109,11 @@ export default function ConflictsDecisions({ device }: { device: string }) {
   const c = usePoll(() => api.gwContested(), [], 1500);
   return (
     <div className="grid gap-4 xl:grid-cols-2">
-      <Card title="Themis, contested facts"
-        right={c.data && c.data.length > 0 && <span className="num text-xs text-alert">{c.data.length} open</span>}>
+      <Card title="Mission control · Themis, contested facts"
+        right={c.data && c.data.length > 0 && <span className="num text-xs text-gold">{c.data.length} open</span>}>
         {c.error && <ErrorNote error={`Gateway unreachable (${c.error})`} />}
         {!c.data ? <Empty>Loading…</Empty> : c.data.length === 0 ? (
-          <Empty>No conflicts. When two offline devices disagree about the same machine, it shows up here instead of being guessed away.</Empty>
+          <Empty>All crews agree. When two rovers on the surface report opposite things about the same machine, both are held here instead of being guessed away.</Empty>
         ) : (
           <div className="space-y-8">
             {c.data.map((g) => <ConflictGroup key={g.entity_key} g={g} onResolved={c.refresh} />)}

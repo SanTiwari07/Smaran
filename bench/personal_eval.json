@@ -1,0 +1,179 @@
+{
+ "about": "Retrieval-quality set for the personal companion (bench/personal_eval.py). Corpus = the 15 story utterances in backend/companion/story.py (run through the real agent) plus `extra_notes`. A query is a hit at k if any returned memory's text contains one of its `relevant` substrings. Queries are written as paraphrases (little word overlap with the memory) on purpose. First-draft labels by the author; a second person has not labelled them.",
+ "extra_notes": [
+  "The DBMS lab today was about writing SQL joins on the college sample database.",
+  "Watched a video on B-trees and how database indexes speed up lookups.",
+  "Operating systems tutorial: deadlock detection using the resource allocation graph.",
+  "Our mentor Dr. Sharma prefers a short weekly progress email every Friday.",
+  "The machine learning quiz went okay; I mixed up L1 and L2 regularization.",
+  "Went through the hackathon problem statements and shortlisted the edge AI one.",
+  "Library book on computer networks is due back next week.",
+  "Practiced a five minute pitch for the capstone demo in front of the mirror.",
+  "The college wifi was down again in the lab block this afternoon.",
+  "Learned that Docker volumes keep the Qdrant data safe when the container restarts.",
+  "Read about CRDTs and version vectors for syncing data between devices.",
+  "Aarav finished the login page and the dashboard layout for the frontend.",
+  "Attended the placement workshop about resumes and how to list projects.",
+  "Reviewed the ER diagram with a friend and fixed two missing foreign keys.",
+  "Gym session in the evening, leg day.",
+  "Compared cosine similarity and dot product for embedding search.",
+  "The OS assignment needs a simulation of the banker's algorithm in C.",
+  "Ordered a new keyboard for coding; it arrives on Saturday.",
+  "Sunday plan: clean the desk, do laundry, and revise the DBMS notes.",
+  "Reading the FastAPI docs on background tasks and dependency injection."
+ ],
+ "queries": [
+  {
+   "q": "Which DB are we going with for the capstone?",
+   "relevant": [
+    "PostgreSQL as the database"
+   ]
+  },
+  {
+   "q": "what did we pick for the vector search part",
+   "relevant": [
+    "Qdrant as the vector store"
+   ]
+  },
+  {
+   "q": "Which web framework is the backend built on?",
+   "relevant": [
+    "FastAPI as the backend framework"
+   ]
+  },
+  {
+   "q": "who is building the UI",
+   "relevant": [
+    "handles the frontend"
+   ]
+  },
+  {
+   "q": "what is still left to do for the final-year project",
+   "relevant": [
+    "TODO:"
+   ]
+  },
+  {
+   "q": "when do we meet for the project review",
+   "relevant": [
+    "capstone review meeting is at 3 PM"
+   ]
+  },
+  {
+   "q": "what time of day do I work best",
+   "relevant": [
+    "prefer studying in the morning",
+    "code late at night"
+   ]
+  },
+  {
+   "q": "what did the mentor say about the deadline for stopping new features",
+   "relevant": [
+    "freeze features by 10 Oct"
+   ]
+  },
+  {
+   "q": "do we need a postgres extension for embeddings",
+   "relevant": [
+    "don't need pgvector"
+   ]
+  },
+  {
+   "q": "which scheduling algorithms did we study in the OS class",
+   "relevant": [
+    "round robin"
+   ]
+  },
+  {
+   "q": "what normal forms did the DBMS lecture cover",
+   "relevant": [
+    "normalization up to BCNF"
+   ]
+  },
+  {
+   "q": "when does hackathon signup end and how big can a team be",
+   "relevant": [
+    "registration closes on 5 Oct"
+   ]
+  },
+  {
+   "q": "what do I have to hand in for the database course",
+   "relevant": [
+    "submit the DBMS assignment"
+   ]
+  },
+  {
+   "q": "what did I learn about training neural networks",
+   "relevant": [
+    "gradient descent"
+   ]
+  },
+  {
+   "q": "what is happening with my pay at the internship",
+   "relevant": [
+    "salary discussion"
+   ]
+  },
+  {
+   "q": "who do I need to phone about the vacation",
+   "relevant": [
+    "Call Riya"
+   ]
+  },
+  {
+   "q": "how do we keep vector data safe when containers restart",
+   "relevant": [
+    "Docker volumes keep the Qdrant data"
+   ]
+  },
+  {
+   "q": "what is the mentor's preference for updates",
+   "relevant": [
+    "weekly progress email"
+   ]
+  },
+  {
+   "q": "what did Aarav complete",
+   "relevant": [
+    "login page and the dashboard layout"
+   ]
+  },
+  {
+   "q": "how do devices sync without a central clock",
+   "relevant": [
+    "CRDTs and version vectors"
+   ]
+  },
+  {
+   "q": "which quiz topics did I confuse",
+   "relevant": [
+    "L1 and L2 regularization"
+   ]
+  },
+  {
+   "q": "what needs to be presented at demo day",
+   "relevant": [
+    "prepare the capstone demo slides",
+    "demo day is on 14 Oct"
+   ]
+  },
+  {
+   "q": "what is the OS assignment about",
+   "relevant": [
+    "banker's algorithm"
+   ]
+  },
+  {
+   "q": "where can I read about async work in the API framework",
+   "relevant": [
+    "FastAPI docs on background tasks"
+   ]
+  },
+  {
+   "q": "what did I do to prepare my talk",
+   "relevant": [
+    "five minute pitch"
+   ]
+  }
+ ]
+}

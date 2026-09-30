@@ -5,7 +5,7 @@ import {
   Astronaut, ago, bytes, Button, Card, clock, CritBadge, Empty, ErrorNote, Group, Indicator, SHARD_META, Stat, StatRow,
 } from "../components/ui";
 import { usePoll } from "../hooks/usePoll";
-import ProveIt from "./ProveIt";
+import { AstronautFlag, Horizon, Moons } from "../components/scenery";
 
 function DeviceCard({ id }: { id: string }) {
   const st = usePoll(() => api.state(id), [id]);
@@ -28,16 +28,16 @@ function DeviceCard({ id }: { id: string }) {
     <Card
       title={
         <span className="flex items-center gap-3">
-          <Astronaut online={s?.online ?? true} size={30} stripe={id === "A" ? "#f5993c" : "#8ea2ff"} />
-          <span>Device {id}</span>
+          <Astronaut online={s?.online ?? true} size={30} stripe={id === "A" ? "#e8590c" : "#b79cff"} />
+          <span>Rover {id}</span>
         </span>
       }
       right={s && (
         <div className="flex items-center gap-3">
-          <Indicator tone={s.online ? "ok" : "alert"}>{s.online ? "Comms online" : "Comms lost"}</Indicator>
+          <Indicator tone={s.online ? "live" : "surface"}>{s.online ? "Relay in view" : "On the surface"}</Indicator>
           <button type="button" disabled={busy} onClick={() => run(() => api.setOnline(id, !s.online))}
             className="whitespace-nowrap text-xs text-muted underline decoration-line underline-offset-4 hover:text-ink disabled:opacity-40">
-            {s.online ? "Cut link" : "Restore link"}
+            {s.online ? "Go to surface mode" : "Relay pass begins"}
           </button>
         </div>
       )}
@@ -54,12 +54,12 @@ function DeviceCard({ id }: { id: string }) {
               ))}
             </StatRow>
           </Group>
-          <Group title="Sync link">
+          <Group title="Relay">
             <StatRow cols={4}>
-              <Stat label="Outbox" value={s.outbox_depth} hint="Memories waiting to sync" />
+              <Stat label="Manifest" value={s.outbox_depth} hint="Memories waiting for the next relay pass" />
               <Stat label="Conflicts" value={s.contested} tone={s.contested ? "alert" : undefined} />
-              <Stat label="Last sync" value={<span className="text-base">{ago(s.last_sync)}</span>} />
-              <Stat label="Sent" value={<span className="text-base">{bytes(s.bytes_sent)}</span>} hint="Bytes pushed to the gateway" />
+              <Stat label="Last relay pass" value={<span className="text-base">{ago(s.last_sync)}</span>} />
+              <Stat label="Sent" value={<span className="text-base">{bytes(s.bytes_sent)}</span>} hint="Bytes reported home" />
             </StatRow>
           </Group>
           <Group title="Crash recovery">
@@ -72,13 +72,13 @@ function DeviceCard({ id }: { id: string }) {
             </StatRow>
           </Group>
           {st.error && <ErrorNote error={`Lost contact: ${st.error}`} />}
-          {s.last_error && s.online && <ErrorNote error={`Sync error: ${s.last_error}`} />}
+          {s.last_error && s.online && <ErrorNote error={`Relay pass failed: ${s.last_error}`} />}
           <ErrorNote error={err} />
-          <Group title="Outbox, most critical first">
+          <Group title="Manifest, most critical first">
             <div className="mb-2 flex justify-end">
               <Button variant="secondary" disabled={busy || !s.online} onClick={() => run(() => api.syncNow(id))}
-                title={s.online ? "Push and pull now" : "Device is offline"}>
-                {busy ? "Syncing…" : "Sync now"}
+                title={s.online ? "Report home now" : "On the surface: no relay in view"}>
+                {busy ? "Relaying…" : "Report home"}
               </Button>
             </div>
             {ob.data && ob.data.length > 0 ? (
@@ -92,7 +92,7 @@ function DeviceCard({ id }: { id: string }) {
                 ))}
                 {ob.data.length > 6 && <li className="py-1.5 text-xs text-muted">and {ob.data.length - 6} more</li>}
               </ul>
-            ) : <p className="text-sm text-muted">Empty. Everything is synced.</p>}
+            ) : <p className="text-sm text-muted">Manifest empty. Everything has been reported home.</p>}
           </Group>
           <p className="font-mono text-[11px] text-faint">classifier {s.classifier} / embedder {s.embedder}</p>
         </div>
@@ -107,7 +107,7 @@ function GatewayCard() {
   const s = stats.data;
   const a = audit.data;
   return (
-    <Card title="Base station · Qdrant Server" right={s && <span className="truncate font-mono text-xs text-faint">{s.server}</span>}>
+    <Card title="Orbital relay · Qdrant Server" right={s && <span className="truncate font-mono text-xs text-faint">{s.server}</span>}>
       {stats.error && !s ? <ErrorNote error={`Gateway unreachable (${stats.error})`} /> : !s ? <Empty>Loading…</Empty> : (
         <div className="space-y-5">
           <StatRow cols={3}>
@@ -146,7 +146,7 @@ function GatewayCard() {
   );
 }
 
-const ALERT_KINDS = new Set(["conflict", "offline"]);
+const ALERT_KINDS = new Set(["conflict"]);
 
 function describe(a: ActivityItem): string {
   const f = a as Record<string, unknown>;
@@ -171,7 +171,7 @@ function ActivityFeed() {
             <li key={`${it.ts}-${i}`} className="grid grid-cols-[auto_auto_5.5rem_1fr] gap-x-3 border-b border-line/60 py-1.5 last:border-0">
               <span className="num text-faint">{clock(it.ts)}</span>
               <span className="text-muted">{it.device}</span>
-              <span className={ALERT_KINDS.has(it.kind) ? "text-alert" : "text-ink"}>{it.kind}</span>
+              <span className={ALERT_KINDS.has(it.kind) ? "text-gold" : "text-ink"}>{it.kind}</span>
               <span className="min-w-0 break-words font-sans text-muted">{describe(it)}</span>
             </li>
           ))}
@@ -187,21 +187,21 @@ function MissionBanner() {
   const states = usePoll(() => Promise.all(ids.map((d) => api.state(d).catch(() => null))), [], 2000);
   const online = (states.data ?? []).filter((x) => x?.online).length;
   return (
-    <section className="relative mb-4 overflow-hidden rounded-xl border border-line">
-      <img src="/hero.webp" alt="" className="absolute inset-0 h-full w-full object-cover object-[50%_72%]" />
-      <div className="absolute inset-0 bg-gradient-to-r from-paper via-paper/70 to-transparent" />
-      <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-paper/80 to-transparent" />
-      <div className="relative flex min-h-[210px] flex-col justify-center gap-3 px-6 py-6 sm:min-h-[240px] sm:px-9">
-        <span className="font-mono text-[11px] uppercase tracking-[0.16em]" style={{ color: "var(--brand-glow)" }}>Mission control · CNC-07 fleet</span>
-        <h1 className="max-w-md text-3xl font-semibold leading-tight sm:text-4xl">Every crew member remembers. Nobody lies.</h1>
+    <section className="relative mb-4 overflow-hidden rounded-xl border border-line" style={{ background: "linear-gradient(180deg,#0b0709 0%,#2a1116 45%,#7a2a12 78%,#c1440e 100%)" }}>
+      <Moons />
+      <Horizon className="absolute inset-x-0 bottom-0" height={110} />
+      <AstronautFlag className="bob absolute bottom-7 right-[7%] hidden w-24 drop-shadow-[0_10px_14px_rgba(0,0,0,.45)] sm:block" />
+      <div className="relative flex min-h-[230px] flex-col justify-center gap-3 px-6 py-6 sm:px-9">
+        <span className="label text-surface">Mission log · CNC-07 fleet</span>
+        <h1 className="max-w-lg text-3xl font-bold leading-tight sm:text-4xl">Offline isn't a blackout. It's a <span className="text-surface">landing.</span></h1>
         <div className="flex flex-wrap gap-2 pt-1">
           <span className="rounded-full border border-line bg-paper/70 px-3 py-1 text-xs backdrop-blur">
-            <span className="num font-mono text-ink">{online}/{ids.length}</span> crew on comms
+            <span className="num font-mono text-ink">{online}/{ids.length}</span> rovers with relay in view
           </span>
           <span className="rounded-full border border-line bg-paper/70 px-3 py-1 text-xs backdrop-blur">
-            <span className="num font-mono text-ink">{gw.data?.points ?? "–"}</span> fleet memories
+            <span className="num font-mono text-ink">{gw.data?.points ?? "–"}</span> colony memories
           </span>
-          <span className={`rounded-full border bg-paper/70 px-3 py-1 text-xs backdrop-blur ${gw.data?.contested ? "border-alert/50 text-alert" : "border-line"}`}>
+          <span className={`rounded-full border bg-paper/70 px-3 py-1 text-xs backdrop-blur ${gw.data?.contested ? "border-gold/50 text-gold" : "border-line"}`}>
             <span className="num font-mono">{gw.data?.contested ?? 0}</span> contested
           </span>
         </div>
@@ -220,7 +220,6 @@ export default function DevicesSync() {
           {Object.keys(DEVICES).map((d) => <DeviceCard key={d} id={d} />)}
         </div>
         <GatewayCard />
-        <ProveIt />
       </div>
       <ActivityFeed />
     </div>

@@ -1,0 +1,70 @@
+{
+ "embedder": "bge-small-en-v1.5",
+ "memories": 40,
+ "queries": 25,
+ "results": {
+  "bm25": {
+   "hit@1": "11/25",
+   "hit@3": "15/25",
+   "hit@5": "19/25",
+   "hit@1_rate": 0.44,
+   "hit@3_rate": 0.6,
+   "hit@5_rate": 0.76,
+   "mrr": 0.547,
+   "not_in_top3": [
+    "Which DB are we going with for the capstone?",
+    "what did we pick for the vector search part",
+    "who is building the UI",
+    "what is still left to do for the final-year project",
+    "what time of day do I work best",
+    "which scheduling algorithms did we study in the OS class",
+    "what do I have to hand in for the database course",
+    "who do I need to phone about the vacation",
+    "where can I read about async work in the API framework",
+    "what did I do to prepare my talk"
+   ]
+  },
+  "dense": {
+   "hit@1": "16/25",
+   "hit@3": "22/25",
+   "hit@5": "22/25",
+   "hit@1_rate": 0.64,
+   "hit@3_rate": 0.88,
+   "hit@5_rate": 0.88,
+   "mrr": 0.76,
+   "not_in_top3": [
+    "do we need a postgres extension for embeddings",
+    "what is the mentor's preference for updates",
+    "what did I do to prepare my talk"
+   ]
+  },
+  "hybrid": {
+   "hit@1": "12/25",
+   "hit@3": "21/25",
+   "hit@5": "24/25",
+   "hit@1_rate": 0.48,
+   "hit@3_rate": 0.84,
+   "hit@5_rate": 0.96,
+   "mrr": 0.681,
+   "not_in_top3": [
+    "what is still left to do for the final-year project",
+    "what time of day do I work best",
+    "what do I have to hand in for the database course",
+    "what did I do to prepare my talk"
+   ]
+  },
+  "hybrid+rank": {
+   "hit@1": "18/25",
+   "hit@3": "23/25",
+   "hit@5": "24/25",
+   "hit@1_rate": 0.72,
+   "hit@3_rate": 0.92,
+   "hit@5_rate": 0.96,
+   "mrr": 0.823,
+   "not_in_top3": [
+    "what do I have to hand in for the database course",
+    "what did I do to prepare my talk"
+   ]
+  }
+ }
+}

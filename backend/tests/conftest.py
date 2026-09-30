@@ -60,3 +60,59 @@ def make_device(tmp_path, embedder, gateway_client):
     for d in made:
         d.close()
         shutil.rmtree(d.root, ignore_errors=True)
+
+
+class FakeLLM:
+    """Stands in for the local SLM / cloud model in tests."""
+    kind = "fake"
+
+    def __init__(self, reply="ok [1]", fail=False, model="fake-slm"):
+        self.reply, self.fail, self.model, self.calls = reply, fail, model, []
+        self.base_url = "fake://"
+
+    def available(self, *a, **k):
+        return True
+
+    def chat(self, messages, json_mode=False, max_tokens=0):
+        self.calls.append(messages)
+        if self.fail:
+            raise RuntimeError("model down")
+        return self.reply
+
+
+@pytest.fixture
+def campus_gateway(tmp_path, embedder):
+    """A gateway seeded with campus knowledge (the personal-companion domain)."""
+    gw = Gateway(FleetServer(mode="embedded", path=":memory:"), tmp_path / "gw-campus.db", lambda: embedder,
+                 log=Log("gateway-campus", tmp_path / "logs"))
+    gw.seed(settings.path("seed/campus"))
+    return gw
+
+
+@pytest.fixture
+def campus_client(campus_gateway):
+    return TestClient(create_app(campus_gateway))
+
+
+@pytest.fixture
+def make_companion(tmp_path, embedder, campus_client):
+    gateway_client = campus_client
+    from backend.companion.llm import CloudLLM, ModelRouter
+    from backend.companion.service import Companion
+    from backend.device.classifier import PersonalClassifier
+    made = []
+
+    def _make(device_id="A", local=None, cloud=None, http="gateway", use_local=True):
+        root = tmp_path / f"device-{device_id}"
+        d = Device(device_id, root, embedder, PersonalClassifier(),
+                   http=gateway_client if http == "gateway" else http, log=Log(f"dev-{device_id}", tmp_path / "logs"))
+        router = ModelRouter(local=local or FakeLLM(fail=True), cloud=cloud or CloudLLM(), online=lambda: d.online,
+                             use_local=use_local)
+        c = Companion(d, Hermes(d), router)
+        made.append(d)
+        return c
+
+    yield _make
+    for d in made:
+        d.close()
+        shutil.rmtree(d.root, ignore_errors=True)

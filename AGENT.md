@@ -48,11 +48,11 @@ Every change must keep all ten requirements true. Full matrix: `Research Work/02
 
 ## 4. Do not build (`Research Work/11_WHAT_NOT_TO_BUILD.md`)
 
-- No local LLM chat, no LLM summaries in the demo path, no LLM deciding which report is true.
+- ~~No local LLM chat~~ **Superseded 30 Sep 2026** by the personal-companion pivot ([docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)): a local 3B model may answer questions from retrieved memory and pick a tool. It must always have a rules fallback, its output must pass the validator and grounding checks, and **no LLM ever decides which of two conflicting reports is true**: conflicts are flagged for the person.
 - No P2P mesh, CRDT text merge, IBLT/Merkle sync, Ed25519 signing (future scope only).
 - No Pathway, n8n, Cloudinary or Omnidimension in the live path.
 - No accounts/login/RBAC screens, no mobile rewrite, no Kubernetes/Kafka, no blockchain.
-- No new dashboard views beyond the three (Devices & sync, Memory & search, Conflicts & decisions).
+- Dashboard views: the original three plus **Companion** (chat with a visible trace) and **Control center** (judge controls, edge status, routing, audit, benchmark). No others.
 - Nothing in the demo that needs venue Wi-Fi or a cloud API.
 
 If you think something on this list is needed, write the case in the PR first.
@@ -115,3 +115,12 @@ git diff --cached | grep -niE "cl[a]ude|anthr[o]pic|co-authored-by|generated wit
 | Current audit and work plan | `docs/AUDIT_AND_PLAN.md` |
 | Measured numbers | `docs/BENCHMARKS.md` |
 | Presenter script | `docs/DEMO.md` |
+
+## 12. Personal companion (added 30 Sep 2026)
+
+The domain is a student running a final-year project (see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)); the fleet-maintenance domain still runs with `SMARAN_DOMAIN=fleet SEED_DIR=seed/manuals`.
+
+- Agent code lives in `backend/companion/`. The model never mutates state: planner -> validator -> tool -> verifier -> audit. New tools need a pydantic argument model, a risk level, and a test.
+- Destructive tools require confirmation. Nothing deletes; cancelling writes a new version.
+- Private (Krypta) memory must never reach a cloud prompt. A test enforces it.
+- `python scripts/story.py --runs 10` is the rehearsal for the companion demo; `bench/edge.py` and `bench/personal_eval.py` produce every number quoted about it.

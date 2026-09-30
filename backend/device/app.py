@@ -10,9 +10,11 @@ from ..common.schema import SHARDS, NoteIn, OnlineIn
 from .core import Device
 from .hermes import Hermes
 from .search import MODES
+from ..companion.api import build_router
+from ..companion.service import Companion
 
 
-def create_app(device: Device, hermes: Hermes | None = None) -> FastAPI:
+def create_app(device: Device, hermes: Hermes | None = None, companion: Companion | None = None) -> FastAPI:
     @asynccontextmanager
     async def lifespan(_app):
         if hermes:
@@ -24,6 +26,10 @@ def create_app(device: Device, hermes: Hermes | None = None) -> FastAPI:
 
     app = FastAPI(title=f"Smaran device {device.id}", lifespan=lifespan)
     app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+
+    companion = companion or Companion(device, hermes)
+    app.state.companion = companion
+    app.include_router(build_router(companion))
 
     @app.get("/health")
     def health():
@@ -113,6 +119,7 @@ def create_app(device: Device, hermes: Hermes | None = None) -> FastAPI:
                 device.reset()
         else:
             device.reset()
+        companion.subjects.clear()
         device.set_online(online)
         return device.state()
 

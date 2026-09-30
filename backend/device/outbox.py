@@ -24,6 +24,13 @@ CREATE TABLE IF NOT EXISTS decisions(
   criticality INT, confidence REAL, reason TEXT);
 CREATE TABLE IF NOT EXISTS meta(k TEXT PRIMARY KEY, v TEXT);
 CREATE TABLE IF NOT EXISTS krypta_journal(op_id TEXT PRIMARY KEY, body TEXT, created REAL);
+CREATE TABLE IF NOT EXISTS chat(id INTEGER PRIMARY KEY, ts REAL, role TEXT, text TEXT);
+CREATE TABLE IF NOT EXISTS audit(
+  id INTEGER PRIMARY KEY, ts REAL, request_id TEXT, idem TEXT UNIQUE, tool TEXT, args TEXT, risk TEXT,
+  state TEXT, result TEXT, verified INT, actor TEXT, op_ids TEXT);
+CREATE TABLE IF NOT EXISTS request_log(
+  request_id TEXT PRIMARY KEY, ts REAL, text TEXT, intent TEXT, planner TEXT, online INT, subject TEXT,
+  route TEXT, context TEXT, reply TEXT);
 """
 
 
@@ -44,7 +51,8 @@ class DeviceDB:
     def reset(self) -> None:
         with self.lock:
             self.conn.executescript(
-                "DELETE FROM outbox; DELETE FROM decisions; DELETE FROM meta; DELETE FROM krypta_journal;")
+                "DELETE FROM outbox; DELETE FROM decisions; DELETE FROM meta; DELETE FROM krypta_journal; "
+                "DELETE FROM chat; DELETE FROM audit; DELETE FROM request_log;")
 
     # ---- meta ------------------------------------------------------------------------
     def get(self, k: str, default=None):
@@ -114,6 +122,10 @@ class DeviceDB:
     def _attempts(self, op_id: str) -> int:
         row = self.conn.execute("SELECT attempts FROM outbox WHERE op_id=?", (op_id,)).fetchone()
         return row[0] if row else 0
+
+    def has_op(self, op_id: str) -> bool:
+        with self.lock:
+            return self.conn.execute("SELECT 1 FROM outbox WHERE op_id=?", (op_id,)).fetchone() is not None
 
     def acked(self) -> int:
         with self.lock:

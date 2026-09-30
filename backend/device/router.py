@@ -46,7 +46,7 @@ class Router:
             reason += "; safety keyword -> safety-critical"
         if note.kind == "status" and residency == "drop":
             residency, by, reason = "sync", "rule", reason + "; status updates are never dropped"
-        if residency == "sync" and p.confidence < 0.5 and note.kind not in ("status", "fix"):
+        if residency == "sync" and p.confidence < 0.5 and note.kind not in ("status", "fix", "task", "decision", "fact", "preference"):
             residency, by, reason = "private", "rule", reason + "; unsure, kept local by default"
 
         if residency == "sync" and note.kind != "status":
