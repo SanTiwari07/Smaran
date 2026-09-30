@@ -55,7 +55,7 @@ body{background:var(--void);color:var(--suit);font:400 15px/1.5 Inter,sans-serif
   <div class="grid">
     <div class="pane a">
       <div class="pane-h">
-        <span class="pane-title">🧑‍🔧 Device A (Rover-Alpha)</span>
+        <span class="pane-title">Device A (Rover-Alpha)</span>
         <span class="badge-crit crit-routine">Routine Fix</span>
       </div>
       <div class="quote">“CNC-07 running normally after bearing replacement.”</div>
@@ -67,7 +67,7 @@ body{background:var(--void);color:var(--suit);font:400 15px/1.5 Inter,sans-serif
 
     <div class="pane b">
       <div class="pane-h">
-        <span class="pane-title">🧑‍🔧 Device B (Rover-Beta)</span>
+        <span class="pane-title">Device B (Rover-Beta)</span>
         <span class="badge-crit crit-alert">Safety Alert</span>
       </div>
       <div class="quote">“CNC-07 still vibrating at high RPM; do NOT run above 8000 RPM.”</div>
@@ -80,11 +80,11 @@ body{background:var(--void);color:var(--suit);font:400 15px/1.5 Inter,sans-serif
 
   <div class="contrast">
     <div>
-      <dt>⚠️ Naive Edge Sync (Latest Timestamp Wins)</dt>
+      <dt>[Warning] Naive Edge Sync (Latest Timestamp Wins)</dt>
       <dd>Silently overwrites Device B with Device A because Device A's clock was 4 seconds ahead. <strong>Safety warning is completely lost without an audit trail.</strong></dd>
     </div>
     <div>
-      <dt>🛡️ Smaran Themis Engine (Version Vectors)</dt>
+      <dt>[Guarantee] Smaran Themis Engine (Version Vectors)</dt>
       <dd>Recognizes <em>concurrent</em> updates ({A:1, B:0} || {A:0, B:1}). <em>Both reports preserved in Agora</em>, flagged for supervisor sign-off, and historical belief states remain queryable.</dd>
     </div>
   </div>

@@ -14,16 +14,16 @@ Built on **Qdrant Edge** (on every device) and **Qdrant Server** (the fleet hub)
 ---
 
 <p align="center">
-  <a href="story/index.html"><b>📖 Interactive Story Walkthrough</b></a> ·
-  <a href="docs/ARCHITECTURE.md"><b>🏛️ Architecture Deep-Dive</b></a> ·
-  <a href="docs/BENCHMARKS.md"><b>📊 Measured Benchmarks</b></a> ·
-  <a href="docs/DEMO.md"><b>🎬 Presenter Script</b></a> ·
-  <a href="#team-and-license"><b>👥 The Team</b></a>
+  <a href="story/index.html"><img src="docs/assets/icons/book-open.svg" width="16" height="16" align="center" alt="" /> <b>Interactive Story Walkthrough</b></a> ·
+  <a href="docs/ARCHITECTURE.md"><img src="docs/assets/icons/cpu.svg" width="16" height="16" align="center" alt="" /> <b>Architecture Deep-Dive</b></a> ·
+  <a href="docs/BENCHMARKS.md"><img src="docs/assets/icons/bar-chart-2.svg" width="16" height="16" align="center" alt="" /> <b>Measured Benchmarks</b></a> ·
+  <a href="docs/DEMO.md"><img src="docs/assets/icons/terminal.svg" width="16" height="16" align="center" alt="" /> <b>Presenter Script</b></a> ·
+  <a href="#the-team"><img src="docs/assets/icons/users.svg" width="16" height="16" align="center" alt="" /> <b>The Team</b></a>
 </p>
 
 ---
 
-## 📸 Mission Control Interface
+## <img src="docs/assets/icons/monitor.svg" width="22" height="22" align="center" alt="" /> Mission Control Interface
 
 <p align="center">
   <img src="docs/assets/dashboard_hero.png" alt="Smaran Mission Control Dashboard" width="100%">
@@ -34,14 +34,14 @@ Built on **Qdrant Edge** (on every device) and **Qdrant Server** (the fleet hub)
 
 ---
 
-## 📖 The Story of Smaran
+## <img src="docs/assets/icons/book-open.svg" width="22" height="22" align="center" alt="" /> The Story of Smaran
 
 ### Act I: The Edge Disconnect (Sol 001)
 
 Imagine two maintenance technicians—or two planetary rovers—dispatched into a network dead-zone (a steel-reinforced factory basement, a remote mine, or the Martian surface). 
 
 Standard edge systems fail immediately:
-1. Cloud-dependent agents go dark when Wi-Fi drops.
+1. Cloud-dependent systems go dark when Wi-Fi drops.
 2. Local vector databases dump everything into a flat, unsynchronized store.
 3. When the connection flickers back, standard sync engines rely on **timestamps (Last-Write-Wins)**. If Device A and Device B made conflicting observations while disconnected, **one report is silently destroyed**, and skewed device clocks can cause the wrong report to win.
 
@@ -60,11 +60,11 @@ flowchart TD
     U["Technician Note / Voice / Observation"] --> E["On-Device Embedding<br/>Dense (bge-small) + Sparse (BM25)"]
     E --> A{"Argus Classifier & Router"}
     
-    A -- "PII Rule Triggered (phone/email/Aadhaar/PAN)" --> K[("Krypta Shard<br/>🔒 ZERO SYNC CODE PATH")]
-    A -- "Fleet Knowledge (Machine note / Status)" --> H[("Hermes Shard<br/>📦 Outbox Waiting for Link")]
-    A -- "Sync Queue" --> O[["SQLite WAL Outbox<br/>⚡ Priority: Criticality DESC, Seq ASC"]]
+    A -- "PII Rule Triggered (phone/email/Aadhaar/PAN)" --> K[("Krypta Shard<br/>[ZERO SYNC PATH]")]
+    A -- "Fleet Knowledge (Machine note / Status)" --> H[("Hermes Shard<br/>[Outbox Waiting for Link]")]
+    A -- "Sync Queue" --> O[["SQLite WAL Outbox<br/>[Priority: Criticality DESC, Seq ASC]"]]
     
-    M[("Agora Shard<br/>🌐 Local Mirror of Fleet Server")]
+    M[("Agora Shard<br/>[Local Fleet Mirror]")]
     
     Q["Query (Hybrid Dense + Sparse BM25)"] --> F{"Reciprocal Rank Fusion (RRF)<br/>with Device-Wide IDF"}
     F --> K & H & M
@@ -75,14 +75,14 @@ flowchart TD
   S -- "Change Feed (server_seq)" --> M
 ```
 
-1. **🔒 Krypta (Private by Construction)**: 
+1. **Krypta (Private by Construction)** <img src="docs/assets/icons/lock.svg" width="16" height="16" align="center" alt="" />: 
    - A dedicated Edge Shard designed with **zero synchronization code paths**.
-   - Deterministic Indian PII regex filters (mobile numbers, emails, Aadhaar, PAN) force private records into Krypta. No AI model or prompt can override these structural boundaries.
+   - Deterministic Indian PII regex filters (mobile numbers, emails, Aadhaar, PAN) force private records into Krypta. No external prompt or inference model can override these structural boundaries.
    - Gateway re-verification and server audits prove **0 private records leak to the cloud**.
-2. **📦 Hermes (Mutable Edge Outbox)**: 
+2. **Hermes (Mutable Edge Outbox)** <img src="docs/assets/icons/package.svg" width="16" height="16" align="center" alt="" />: 
    - Captures shareable edge memories and writes them into an ACID-compliant SQLite WAL outbox before touching memory.
    - Safety-critical alerts are prioritized (`criticality DESC`) when bandwidth is constrained.
-3. **🌐 Agora (Fleet Mirror on Edge)**: 
+3. **Agora (Fleet Mirror on Edge)** <img src="docs/assets/icons/globe.svg" width="16" height="16" align="center" alt="" />: 
    - A local read mirror of Qdrant Server continuously refreshed via lightweight change feeds, providing immediate low-latency local context with device-wide inverse document frequency (IDF).
 
 ---
@@ -101,7 +101,7 @@ When two disconnected devices edit the same entity or waypoint while out of touc
 
 ### Act IV: The Personal Companion (Memory That Knows *Why*)
 
-Sitting on top of the edge storage is an explainable personal companion agent (`backend/companion/`):
+Sitting on top of the edge storage is an explainable personal companion subsystem (`backend/companion/`):
 - **Decision Memory**: Records the rationale in the user's exact words along with evidence and provenance. Asking *"Why did we choose PostgreSQL?"* answers directly from structured historical rationale.
 - **Contradiction Detection**: If you state *"Let's switch to MongoDB"*, Smaran does not silently overwrite PostgreSQL. It halts, flags a pending contradiction, and prompts for explicit confirmation.
 - **Explainable Provenance**: Every retrieved memory and synthesized answer carries a deterministic provenance score and link audit trace (`GET /companion/memory/explain`).
@@ -109,7 +109,7 @@ Sitting on top of the edge storage is an explainable personal companion agent (`
 
 ---
 
-## ⚡ Measured Results
+## <img src="docs/assets/icons/activity.svg" width="22" height="22" align="center" alt="" /> Measured Results
 
 All metrics are experimentally measured on project data on local commodity hardware. See [docs/BENCHMARKS.md](docs/BENCHMARKS.md) and [docs/EDGE_BENCHMARKS.md](docs/EDGE_BENCHMARKS.md).
 
@@ -126,24 +126,24 @@ All metrics are experimentally measured on project data on local commodity hardw
 
 ---
 
-## 🎯 PS3 Requirements Checklist
+## <img src="docs/assets/icons/check-circle-2.svg" width="22" height="22" align="center" alt="" /> PS3 Requirements Checklist
 
 | PS3 Requirement | Implementation in Smaran | Status |
 |---|---|---|
-| **R1. Qdrant Edge on Device** | Three `EdgeShard` instances per device with named dense & built-in BM25 vectors ([backend/device/store.py](backend/device/store.py)) | ✅ Completed |
-| **R2. Semantic Memory on Edge** | Partitioned episodic, semantic, and procedural memories with FastEmbed embeddings | ✅ Completed |
-| **R3. Low-Latency Hybrid Search** | Hybrid dense cosine + BM25 sparse queries fused via Reciprocal Rank Fusion (RRF) with device-wide IDF | ✅ Completed |
-| **R4. Dynamic Placement (Argus)** | PII regex guardrails + logistic regression classifier + Agora deduplication with "Why here" badges | ✅ Completed |
-| **R5. Intermittent Connectivity** | Offline toggle switch, SQLite WAL crash-safe outbox, priority ordering, and automatic reconnect drain | ✅ Completed |
-| **R6. Sync with Qdrant Server** | Real Qdrant Server (`v1.19.1`) collection in Docker, idempotent ingestion, and server change feeds | ✅ Completed |
-| **R7. Evolving Memory & Conflicts** | Themis version vectors, supervisor resolution endpoints, and Chronos belief timeline | ✅ Completed |
-| **R8. Mission-Control UI** | React 19 + Vite dashboard: Devices & Sync, Memory & Search, Conflicts, Control Center, and Live Proof runner | ✅ Completed |
-| **R9. Edge-to-Cloud Workflow** | Local Agora mirror, change feed propagation, cloud escalation for low-confidence queries, and server privacy audits | ✅ Completed |
-| **R10. Complete Integrated Product** | Interactive companion, Mars scrollytelling walkthrough ([story/index.html](story/index.html)), and automated beat rehearsals | ✅ Completed |
+| **R1. Qdrant Edge on Device** | Three `EdgeShard` instances per device with named dense & built-in BM25 vectors ([backend/device/store.py](backend/device/store.py)) | [x] Completed |
+| **R2. Semantic Memory on Edge** | Partitioned episodic, semantic, and procedural memories with FastEmbed embeddings | [x] Completed |
+| **R3. Low-Latency Hybrid Search** | Hybrid dense cosine + BM25 sparse queries fused via Reciprocal Rank Fusion (RRF) with device-wide IDF | [x] Completed |
+| **R4. Dynamic Placement (Argus)** | PII regex guardrails + logistic regression classifier + Agora deduplication with "Why here" badges | [x] Completed |
+| **R5. Intermittent Connectivity** | Offline toggle switch, SQLite WAL crash-safe outbox, priority ordering, and automatic reconnect drain | [x] Completed |
+| **R6. Sync with Qdrant Server** | Real Qdrant Server (`v1.19.1`) collection in Docker, idempotent ingestion, and server change feeds | [x] Completed |
+| **R7. Evolving Memory & Conflicts** | Themis version vectors, supervisor resolution endpoints, and Chronos belief timeline | [x] Completed |
+| **R8. Mission-Control UI** | React 19 + Vite dashboard: Devices & Sync, Memory & Search, Conflicts, Control Center, and Live Proof runner | [x] Completed |
+| **R9. Edge-to-Cloud Workflow** | Local Agora mirror, change feed propagation, cloud escalation for low-confidence queries, and server privacy audits | [x] Completed |
+| **R10. Complete Integrated Product** | Interactive companion, Mars scrollytelling walkthrough ([story/index.html](story/index.html)), and automated beat rehearsals | [x] Completed |
 
 ---
 
-## 🛠️ Prove It In 60 Seconds
+## <img src="docs/assets/icons/terminal.svg" width="22" height="22" align="center" alt="" /> Prove It In 60 Seconds
 
 Verify Smaran locally in four quick commands:
 
@@ -185,7 +185,7 @@ Verify Smaran locally in four quick commands:
 
 ---
 
-## 🚀 Getting Started
+## <img src="docs/assets/icons/rocket.svg" width="22" height="22" align="center" alt="" /> Getting Started
 
 ### Prerequisites
 - **Python**: 3.10+ (tested on 3.11, 3.13, 3.14)
@@ -236,27 +236,27 @@ Start the full stack with a single command:
 
 ---
 
-## 🎬 Video Demonstration
+## <img src="docs/assets/icons/video.svg" width="22" height="22" align="center" alt="" /> Video Demonstration
 
-> 📹 **Pitch & Walkthrough Video**: [Link to 3-Minute Video Demo](https://youtu.be/) *(Demonstrating Beats 1–5: offline note generation, PII guardrails in Krypta, version-vector conflict resolution, and the crash recovery test).*
+> <img src="docs/assets/icons/play-circle.svg" width="16" height="16" align="center" alt="" /> **Pitch & Walkthrough Video**: [Link to 3-Minute Video Demo](https://youtu.be/) *(Demonstrating Beats 1–5: offline note generation, PII guardrails in Krypta, version-vector conflict resolution, and the crash recovery test).*
 
 See [docs/DEMO.md](docs/DEMO.md) for the exact step-by-step presenter script and backup instructions.
 
 ---
 
-## 👥 The Team
+## <img src="docs/assets/icons/users.svg" width="22" height="22" align="center" alt="" /> The Team
 
 Created for **Code Cubicle 6.0** by:
 
 | Member | Role | Primary Contributions |
 |---|---|---|
-| **Sanskar Tiwari**<br>([@SanTiwari07](https://github.com/SanTiwari07)) | **Lead & Distributed Systems Architect** | Edge Shard architecture (`qdrant-edge-py`), Themis version-vector mathematics, SQLite WAL outbox, crash recovery log, float16 vector transport, and Qdrant Server synchronization. |
-| **Kanishka Salgude**<br>([@kanishkasalgude5](https://github.com/kanishkasalgude5)) | **Frontend Engineer & AI Systems** | Personal Companion subsystem (`backend/companion/`), decision & contradiction memory, provenance scoring, Olympus Mission Control, Control Center, and Red Horizon Mars design system. |
-| **Shambhavi Patil** | **ML Engineer & Retrieval Evaluation** | Argus PII regex rules, residency & criticality classifier training, retrieval quality benchmark evaluation (40 golden queries), and dataset curation. |
+| **Sanskar Tiwari**<br>[@SanTiwari07](https://github.com/SanTiwari07) | **Lead & Distributed Systems Architect** | Edge Shard architecture (`qdrant-edge-py`), Themis version-vector mathematics, SQLite WAL outbox, crash recovery log, float16 vector transport, and Qdrant Server synchronization. |
+| **Kanishka Salgude**<br>[@kanishkasalgude](https://github.com/kanishkasalgude) | **Frontend Engineer & AI Systems** | Personal Companion subsystem (`backend/companion/`), decision & contradiction memory, provenance scoring, Olympus Mission Control, Control Center, and Red Horizon Mars design system. |
+| **Shambhavi Patil**<br>[@Shambhavi500](https://github.com/Shambhavi500) | **ML Engineer & Retrieval Evaluation** | Argus PII regex rules, residency & criticality classifier training, retrieval quality benchmark evaluation (40 golden queries), and dataset curation. |
 
 ---
 
-## 📜 Third-Party Credits & License
+## <img src="docs/assets/icons/scale.svg" width="22" height="22" align="center" alt="" /> Third-Party Credits & License
 
 This project is licensed under the **Apache License 2.0** — see the [LICENSE](LICENSE) file for details.
 
