@@ -34,4 +34,9 @@ ppt/
 ppt.*
 ppt
 
+# IDE and AI agent caches
+.claude/
+.claude
+.gemini/
+
 
