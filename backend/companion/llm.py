@@ -90,7 +90,7 @@ class GeminiLLM:
     def __init__(self, api_key: str | None = None, model: str | None = None, base_url: str | None = None,
                  client: httpx.Client | None = None, timeout: float = 30.0):
         self.key = api_key if api_key is not None else (settings.gemini_api_key or os.environ.get("GEMINI_API_KEY", ""))
-        self.model = model or settings.gemini_model or os.environ.get("GEMINI_MODEL", "gemini-2.0-flash")
+        self.model = model or settings.gemini_model or os.environ.get("GEMINI_MODEL", "gemini-2.5-flash-lite")
         self.base_url = (base_url or settings.gemini_url or os.environ.get("GEMINI_URL", "")).rstrip("/")
         if not self.base_url:
             self.base_url = "https://generativelanguage.googleapis.com"
@@ -100,18 +100,23 @@ class GeminiLLM:
         return bool(self.key and self.key.strip())
 
     def chat(self, messages: list[dict], json_mode: bool = False, max_tokens: int = 300) -> str:
-        # 1. Try Google's OpenAI-compatible endpoint
-        try:
-            r = self.client.post(
-                f"{self.base_url}/v1beta/openai/chat/completions",
-                headers={"authorization": f"Bearer {self.key}", "content-type": "application/json"},
-                json={"model": self.model, "messages": messages, "max_tokens": max_tokens, "temperature": 0.1})
-            if r.status_code == 200:
-                return r.json()["choices"][0]["message"]["content"].strip()
-        except Exception:
-            pass
+        models_to_try = [self.model, "gemini-2.5-flash-lite", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]
+        seen: set[str] = set()
+        models = [m for m in models_to_try if not (m in seen or seen.add(m))]
 
-        # 2. Native REST generateContent endpoint fallback
+        # 1. Try Google's OpenAI-compatible endpoint
+        for m in models:
+            try:
+                r = self.client.post(
+                    f"{self.base_url}/v1beta/openai/chat/completions",
+                    headers={"authorization": f"Bearer {self.key}", "content-type": "application/json"},
+                    json={"model": m, "messages": messages, "max_tokens": max_tokens, "temperature": 0.1})
+                if r.status_code == 200:
+                    return r.json()["choices"][0]["message"]["content"].strip()
+            except Exception:
+                pass
+
+        # 2. Native REST generateContent endpoint fallback with model fallback
         system_text = ""
         user_text = []
         for m in messages:
@@ -133,18 +138,29 @@ class GeminiLLM:
         if json_mode:
             payload["generationConfig"]["responseMimeType"] = "application/json"
 
-        url = f"{self.base_url}/v1beta/models/{self.model}:generateContent?key={self.key}"
-        r = self.client.post(url, json=payload)
-        if r.status_code == 404 and "gemini-2.0-flash" in self.model:
-            alt_url = f"{self.base_url}/v1beta/models/gemini-1.5-flash:generateContent?key={self.key}"
-            r = self.client.post(alt_url, json=payload)
-        r.raise_for_status()
-        data = r.json()
-        candidates = data.get("candidates", [])
-        if not candidates:
-            return ""
-        parts = candidates[0].get("content", {}).get("parts", [])
-        return "".join(p.get("text", "") for p in parts).strip()
+        last_err = None
+        for m in models:
+            try:
+                url = f"{self.base_url}/v1beta/models/{m}:generateContent?key={self.key}"
+                r = self.client.post(url, json=payload)
+                if r.status_code == 200:
+                    data = r.json()
+                    candidates = data.get("candidates", [])
+                    if not candidates:
+                        return ""
+                    parts = candidates[0].get("content", {}).get("parts", [])
+                    return "".join(p.get("text", "") for p in parts).strip()
+                elif r.status_code in (404, 429, 503):
+                    last_err = f"{r.status_code} {r.text[:80]}"
+                    continue
+                r.raise_for_status()
+            except Exception as e:
+                last_err = e
+                continue
+
+        if last_err:
+            raise RuntimeError(f"Gemini API error: {last_err}")
+        return ""
 
 
 class CloudLLM:
